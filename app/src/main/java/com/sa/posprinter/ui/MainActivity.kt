@@ -7,8 +7,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.sa.posprinter.R
 import com.sa.posprinter.util.WebAppInterface
+import com.sa.posprinter.R
 
 class MainActivity : AppCompatActivity() {
 

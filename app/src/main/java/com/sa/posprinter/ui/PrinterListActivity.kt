@@ -103,7 +103,12 @@ class PrinterListActivity : AppCompatActivity() {
 
     private fun setupToolbar() {
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
-        setSupportActionBar(toolbar)
+        //setSupportActionBar(toolbar)
+        val btnBack = findViewById<ImageView>(R.id.btnBack)
+
+        btnBack.setOnClickListener {
+            finish()
+        }
     }
 
     /** Check if Bluetooth permission is granted */

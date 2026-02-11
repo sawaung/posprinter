@@ -6,27 +6,35 @@
     android:layout_height="match_parent">
 
     <!-- AppBar -->
-    <com.google.android.material.appbar.AppBarLayout
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:title="Print Preview"
-            android:background="?attr/colorSurface"
-            app:titleTextColor="?attr/colorOnSurface"
-            app:menu="@menu/menu_printer" />
-
-
-    </com.google.android.material.appbar.AppBarLayout>
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorSurface"
+        app:titleTextColor="?attr/colorOnSurface"
+        app:menu="@menu/menu_printer"
+        app:title="">
+        <ImageView
+            android:id="@+id/btnBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_back"
+            android:layout_marginRight="8dp"
+            android:contentDescription="back" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Print Preview"
+            android:textSize="18sp"
+            android:textColor="@color/white"/>
+    </com.google.android.material.appbar.MaterialToolbar>
 
     <!-- Content -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
+        android:layout_marginTop="?attr/actionBarSize"
         android:padding="12dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
@@ -43,6 +51,30 @@
                 android:padding="12dp"
                 android:background="@android:color/white">
 
+                <ImageView
+                    android:id="@+id/ivLogo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:adjustViewBounds="true"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_setting"
+                    android:maxWidth="100dp"
+                    android:maxHeight="100dp"
+                    android:layout_marginBottom="8dp"
+                    android:layout_gravity="center" />
+                <!-- shop name -->
+                <TextView
+                    android:id="@+id/tvShopName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="Dora Storee"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:textAlignment="center" />
+
+
+
                 <!-- Address -->
                 <TextView
                     android:id="@+id/tvAddress"
@@ -50,6 +82,16 @@
                     android:layout_height="wrap_content"
                     android:text="No.12, Main Road, Yangon"
                     android:textSize="14sp"
+                    android:textAlignment="center" />
+
+                <!-- receipt -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="*** Receipt ****"
+                    android:layout_marginTop="8dp"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
                     android:textAlignment="center" />
 
                 <!-- Phone -->
@@ -60,23 +102,75 @@
                     android:text="Phone: 09-123456789"
                     android:textSize="14sp"
                     android:textAlignment="center"
+                    android:visibility="gone"
                     android:layout_marginBottom="8dp" />
 
-                <!-- Date Time -->
-                <TextView
-                    android:id="@+id/tvDateTime"
+                <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="29/01/2026"
-                    android:textSize="12sp"
-                    android:gravity="end"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginTop="16dp">
 
-                <!-- Divider -->
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="#000000" />
+                    <LinearLayout
+                        android:id="@+id/layoutInvoice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Invoice No:"
+                            android:textSize="14sp"
+                            android:layout_marginRight="4dp"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+                        <TextView
+                            android:id="@+id/tvInvoiceNo"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="1212"
+                            android:textSize="14sp"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layoutCashier"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Cashier:"
+                        android:textSize="14sp"
+                        android:layout_marginRight="4dp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/layoutInvoice">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Cashier:"
+                            android:textSize="14sp"
+                            android:layout_marginRight="4dp"/>
+                        <TextView
+                            android:id="@+id/tvCashier"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Dora Storee"
+                            android:textSize="14sp"
+                            android:layout_marginRight="4dp"/>
+                    </LinearLayout>
+
+                    <!-- Date Time -->
+                    <TextView
+                        android:id="@+id/tvDateTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="29/01/2026"
+                        android:textSize="14sp"
+                        app:layout_constraintRight_toRightOf="parent"
+                        app:layout_constraintTop_toBottomOf="@+id/layoutInvoice"
+                        />
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
                 <!-- Dynamic key-value list -->
                 <androidx.recyclerview.widget.RecyclerView
@@ -86,12 +180,6 @@
                     android:nestedScrollingEnabled="false"
                     android:layout_marginTop="8dp"
                     android:layout_marginBottom="8dp" />
-
-                <!-- Divider -->
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="#000000" />
 
                 <!-- Total -->
                 <LinearLayout
@@ -104,19 +192,92 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="TOTAL"
-                        android:textStyle="bold"
-                        android:textSize="16sp" />
+                        android:text="Subtotal" />
 
                     <TextView
-                        android:id="@+id/tvTotal"
+                        android:id="@+id/tvSubTotal"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="8,500"
-                        android:textStyle="bold"
-                        android:textSize="16sp" />
+                        android:text="8,500"/>
                 </LinearLayout>
 
+                <!-- Total -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="0dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Discount"/>
+
+                    <TextView
+                        android:id="@+id/tvDiscount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="8,500" />
+                </LinearLayout>
+
+                <!-- Total -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Total Amount"/>
+
+                    <TextView
+                        android:id="@+id/tvTotalAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="8,500" />
+                </LinearLayout>
+                <!-- Total -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="0dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Unpaid Amount"/>
+
+                    <TextView
+                        android:id="@+id/tvUnpaidAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="8,500" />
+                </LinearLayout>
+                <!-- Total -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="0dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Paid Amount"/>
+
+                    <TextView
+                        android:id="@+id/tvPaidAmount"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="8,500" />
+                </LinearLayout>
             </LinearLayout>
         </ScrollView>
 

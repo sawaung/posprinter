@@ -46,9 +46,10 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.gson)
-    implementation(libs.escpos.coffee)
-    //implementation(libs.escpos)
+    //implementation(libs.escpos.coffee)
+    implementation(libs.escpos)
     // Add Printooth library
+    //implementation("com.github.DantSu:ESCPOS-ThermalPrinter-Android:3.3.0")
     //implementation("com.github.mazenrashed:Printooth:1.3.1")
 
     // Add Kotlin coroutines for async operations

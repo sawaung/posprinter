@@ -1,0 +1,864 @@
+package com.sa.posprinter.ui
+
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothSocket
+import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Bitmap.createScaledBitmap
+import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Color
+import android.os.Bundle
+import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.Button
+import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.appbar.MaterialToolbar
+import com.sa.posprinter.model.PreviewItem
+import com.sa.posprinter.util.PrinterPreference
+import com.github.anastaciocintra.escpos.EscPos
+import com.github.anastaciocintra.escpos.EscPosConst
+import com.github.anastaciocintra.escpos.Style
+import com.github.anastaciocintra.escpos.image.BitonalThreshold
+import com.github.anastaciocintra.escpos.image.CoffeeImage
+import com.github.anastaciocintra.escpos.image.CoffeeImageImpl
+import com.github.anastaciocintra.escpos.image.EscPosImage
+import com.github.anastaciocintra.escpos.image.RasterBitImageWrapper
+import com.sa.posprinter.model.PrinterData
+import com.sa.posprinter.R
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.IOException
+import java.io.OutputStream
+import java.text.SimpleDateFormat
+import java.util.*
+import java.util.Locale
+import java.util.Locale.getDefault
+import java.util.concurrent.Executors
+import androidx.core.graphics.createBitmap
+import java.io.ByteArrayOutputStream
+
+class PreviewActivity : AppCompatActivity() {
+
+    private lateinit var rvItems: RecyclerView
+    private lateinit var tvShopName: TextView
+    private lateinit var tvCashier: TextView
+    private lateinit var tvInvoiceNo: TextView
+    private lateinit var tvAddress: TextView
+    private lateinit var tvPhone: TextView
+    private lateinit var tvDateTime: TextView
+    private lateinit var tvTotal: TextView
+    private lateinit var btnPrint: Button
+    private lateinit var printerPref: PrinterPreference
+
+    // Bluetooth printing variables
+    private var bluetoothAdapter: BluetoothAdapter? = null
+    private var bluetoothSocket: BluetoothSocket? = null
+    private var outputStream: OutputStream? = null
+    private val printerExecutor = Executors.newSingleThreadExecutor()
+    private var isPrinting = false
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_preview)
+
+        printerPref = PrinterPreference(this)
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        setupToolbar()
+        bindViews()
+        setupPreviewData()
+    }
+
+    private fun setupToolbar() {
+        val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+    }
+
+    private fun bindViews() {
+        rvItems = findViewById(R.id.rvItems)
+        tvShopName = findViewById(R.id.tvShopName)
+        tvCashier = findViewById(R.id.tvCashier)
+        tvInvoiceNo = findViewById(R.id.tvInvoiceNo)
+        tvAddress = findViewById(R.id.tvAddress)
+        tvPhone = findViewById(R.id.tvPhone)
+        tvDateTime = findViewById(R.id.tvDateTime)
+        tvTotal = findViewById(R.id.tvTotal)
+        btnPrint = findViewById(R.id.btnPrint)
+
+        btnPrint.setOnClickListener {
+            val printer = printerPref.getPrinter()
+            if (printer == null) {
+                showNoPrinterDialog()
+            } else {
+                executePrintJob(printer)
+            }
+        }
+    }
+
+    private fun setupPreviewData() {
+        // Mock header data
+        tvShopName.text = "Dora Storee"
+        tvAddress.text = "အမှတ် ၁၄၄၊ ငု၀ါလမ်း၊ လှိုင်မြို့နယ်၊ ရန်ကုန်။"
+        tvPhone.text = "Phone: 09-123456789"
+        tvInvoiceNo.text = "293212"
+        tvCashier.text = "Dora Storee"
+        tvDateTime.text = getCurrentDate()
+
+        // Mock key-value data
+        val items = listOf(
+            PreviewItem("Coffee x2", "6,000"),
+            PreviewItem("tea x2", "1,000"),
+            PreviewItem("cold x2", "1,000"),
+            PreviewItem("Cake x1", "2,500"),
+            PreviewItem("Service Charge", "0")
+        )
+
+        rvItems.layoutManager = LinearLayoutManager(this)
+        rvItems.adapter = PreviewAdapter(items)
+
+        // Mock total
+        tvTotal.text = "10,500"
+    }
+
+    private fun getCurrentDate(): String {
+        val formatter = SimpleDateFormat("dd/MM/yyyy hh:mm a", Locale.getDefault())
+        return formatter.format(Date())
+    }
+
+    private fun executePrintJob(printerData: PrinterData) {
+
+        if (isPrinting) {
+            Toast.makeText(this, "Printing in progress...", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Bluetooth support check
+        val adapter = bluetoothAdapter
+        if (adapter == null) {
+            showErrorDialog("Error", "Device doesn't support Bluetooth")
+            return
+        }
+
+        if (!adapter.isEnabled) {
+            showErrorDialog("Bluetooth Off", "Please enable Bluetooth and try again")
+            return
+        }
+
+        isPrinting = true
+        btnPrint.isClickable = false
+        btnPrint.text = "Printing..."
+
+
+        lifecycleScope.launch {
+            var socket: BluetoothSocket? = null
+            var os: OutputStream? = null
+
+            try {
+                withContext(Dispatchers.IO) {
+
+                    // 1️⃣ Get printer device
+                    val device = adapter.getRemoteDevice(printerData.address)
+                        ?: throw PrintException("Printer not found: ${printerData.name}")
+                    Log.i("PreviewActivity", "device address {${device.name}}")
+
+                    // 2️⃣ Create RFCOMM socket
+                    val uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
+                    socket = device.createRfcommSocketToServiceRecord(uuid)
+
+                    Log.i("PreviewActivity", "Printer Socket not Connected")
+                    socket.connect()
+                    Log.i("PreviewActivity", "Printer Socket Connected")
+                    os = socket.outputStream
+                        ?: throw PrintException("Failed to get printer output stream")
+
+                    // 3️⃣ Print using EscPosCoffee
+                    printReceiptWithEscPos(
+                        outputStream = os,
+                        paperSize = printerData.paperSize
+                    )
+                }
+                btnPrint.isClickable = true
+                // 4️⃣ Success UI
+                Toast.makeText(
+                    this@PreviewActivity,
+                    "Receipt printed successfully",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+
+            } catch (e: SecurityException) {
+                Log.e("PrintJob", "Permission error", e)
+
+                    showErrorDialog(
+                        "Permission Error",
+                        "Bluetooth permission required"
+                    )
+
+
+            } catch (e: IOException) {
+                Log.e("PrintJob", "Connection error", e)
+
+                    showErrorDialog(
+                        "Connection Failed",
+                        "Cannot connect to printer: ${printerData.name}\n" +
+                                "Please check if the printer is turned on and paired"
+                    )
+
+                printerPref.clearPrinter()
+
+            } catch (e: PrintException) {
+                Log.e("PrintJob", "Print error", e)
+
+                    showErrorDialog(
+                        "Print Error",
+                        e.message ?: "Printing failed"
+                    )
+
+
+            } catch (e: Exception) {
+                Log.e("PrintJob", "Unexpected error", e)
+
+                    showErrorDialog(
+                        "Print Failed",
+                        "An unexpected error occurred: ${e.localizedMessage}"
+                    )
+
+
+            } finally {
+                // 5️⃣ Cleanup
+                try {
+                    os?.close()
+                    socket?.close()
+                } catch (e: IOException) {
+                    Log.e("PrintJob", "Error closing connection", e)
+                }
+
+                isPrinting = false
+
+                btnPrint.isClickable = true
+                btnPrint.text = "PRINT"
+
+            }
+        }
+    }
+
+
+    private fun drawableToBitmap(context: Context, drawableId: Int): Bitmap {
+        val drawable = ContextCompat.getDrawable(context, drawableId)!!
+        val bitmap = Bitmap.createBitmap(
+            drawable.intrinsicWidth,
+            drawable.intrinsicHeight,
+            Bitmap.Config.ARGB_8888
+        )
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+        return bitmap
+    }
+
+    private fun scaleBitmapForPaper(bitmap: Bitmap, paperSize: String): Bitmap {
+        val targetWidth = when (paperSize.lowercase()) {
+            "58mm", "58" -> 384
+            "76mm", "76" -> 576
+            "80mm", "80" -> 576
+            else -> 384
+        }
+
+        val ratio = targetWidth.toFloat() / bitmap.width
+        val height = (bitmap.height * ratio).toInt()
+
+        return Bitmap.createScaledBitmap(bitmap, targetWidth, height, true)
+    }
+
+
+
+        fun bitmapToEscPos(bitmap: Bitmap): ByteArray {
+        val width = bitmap.width
+        val height = bitmap.height
+        val bytesPerRow = (width + 7) / 8
+        val imageBytes = ByteArray(bytesPerRow * height)
+
+        var index = 0
+        for (y in 0 until height) {
+            for (x in 0 until width step 8) {
+                var b = 0
+                for (bit in 0 until 8) {
+                    val px = x + bit
+                    if (px < width) {
+                        val color = bitmap.getPixel(px, y)
+                        val gray =
+                            (Color.red(color) + Color.green(color) + Color.blue(color)) / 3
+                        if (gray < 128) {
+                            b = b or (1 shl (7 - bit))
+                        }
+                    }
+                }
+                imageBytes[index++] = b.toByte()
+            }
+        }
+
+        val command = ByteArrayOutputStream()
+        command.write(byteArrayOf(0x1D, 0x76, 0x30, 0x00)) // GS v 0
+        command.write(bytesPerRow and 0xFF)
+        command.write((bytesPerRow shr 8) and 0xFF)
+        command.write(height and 0xFF)
+        command.write((height shr 8) and 0xFF)
+        command.write(imageBytes)
+
+        return command.toByteArray()
+    }
+
+    private fun drawableToBitmap(drawableId: Int): Bitmap {
+        val drawable = ContextCompat.getDrawable(this, drawableId)
+            ?: throw IllegalArgumentException("Drawable not found")
+
+        val bitmap = Bitmap.createBitmap(
+            drawable.intrinsicWidth.takeIf { it > 0 } ?: 150,
+            drawable.intrinsicHeight.takeIf { it > 0 } ?: 150,
+            Bitmap.Config.ARGB_8888
+        )
+
+        val canvas = Canvas(bitmap)
+        drawable.setBounds(0, 0, canvas.width, canvas.height)
+        drawable.draw(canvas)
+
+        return bitmap
+    }
+
+    private fun printCenteredLogo(
+        outputStream: OutputStream,
+        drawableId: Int,
+        printerWidthDots: Int = 384, // Adjust based on printer
+        desiredWidthCm: Float = 5f,  // Physical width
+        desiredHeightCm: Float = 5f
+    ) {
+        try {
+            // 1️⃣ Reset printer
+            outputStream.write(byteArrayOf(0x1B, 0x40)) // ESC @
+
+            // 2️⃣ Center alignment
+            outputStream.write(byteArrayOf(0x1B, 0x61, 0x01)) // ESC a 1 = center
+
+            // 3️⃣ Load drawable and convert to bitmap
+            val drawable = ContextCompat.getDrawable(this, drawableId)
+                ?: throw IllegalArgumentException("Drawable not found")
+            val bitmap = Bitmap.createBitmap(
+                drawable.intrinsicWidth.takeIf { it > 0 } ?: printerWidthDots,
+                drawable.intrinsicHeight.takeIf { it > 0 } ?: printerWidthDots,
+                Bitmap.Config.ARGB_8888
+            )
+            val canvas = Canvas(bitmap)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+
+            // 4️⃣ Scale bitmap to desired physical size
+            // Assume printer 203 DPI → 5 cm ≈ 400 dots
+            val dpi = 203
+            val widthPx = (desiredWidthCm / 2.54f * dpi).toInt()
+            val heightPx = (desiredHeightCm / 2.54f * dpi).toInt()
+            val scaledBitmap = Bitmap.createScaledBitmap(bitmap, widthPx, heightPx, true)
+
+            // 5️⃣ Convert to ESC/POS bytes and print
+            val imageBytes = bitmapToEscPos(scaledBitmap)
+            outputStream.write(imageBytes)
+
+            // 6️⃣ Feed and cut
+            outputStream.write(byteArrayOf(0x1B, 0x64, 0x03)) // feed 3 lines
+            outputStream.write(byteArrayOf(0x1D, 0x56, 0x41, 0x10)) // cut full
+
+            outputStream.flush()
+
+        } catch (e: Exception) {
+            Log.e("Printer", "Failed to print logo: ${e.message}")
+        }
+    }
+
+    private fun printCenteredLogo(
+        outputStream: OutputStream,
+        drawableId: Int,
+        desiredWidthCm: Float = 5f  // width in cm
+    ) {
+        try {
+            // Reset printer
+            outputStream.write(byteArrayOf(0x1B, 0x40)) // ESC @
+
+            // Center alignment
+            outputStream.write(byteArrayOf(0x1B, 0x61, 0x01)) // ESC a 1 = center
+
+            // Load drawable
+            val drawable = ContextCompat.getDrawable(this, drawableId)
+                ?: throw IllegalArgumentException("Drawable not found")
+            val bitmap = Bitmap.createBitmap(
+                drawable.intrinsicWidth.takeIf { it > 0 } ?: 384,
+                drawable.intrinsicHeight.takeIf { it > 0 } ?: 120,
+                Bitmap.Config.ARGB_8888
+            )
+            val canvas = Canvas(bitmap)
+            drawable.setBounds(0, 0, canvas.width, canvas.height)
+            drawable.draw(canvas)
+
+            // Convert cm → pixels for printer DPI 203
+            val dpi = 203f
+            val widthPx = (desiredWidthCm / 2.54f * dpi).toInt()   // 5cm -> ~399px
+            val aspectRatio = bitmap.height.toFloat() / bitmap.width.toFloat()
+            val heightPx = (widthPx * aspectRatio).toInt()
+            val scaledBitmap = Bitmap.createScaledBitmap(bitmap, widthPx, heightPx, true)
+
+            // Convert bitmap to ESC/POS bytes
+            val imageBytes = bitmapToEscPos(scaledBitmap)
+            outputStream.write(imageBytes)
+
+            // Feed and cut
+            outputStream.write(byteArrayOf(0x1B, 0x64, 0x03)) // feed 3 lines
+            outputStream.write(byteArrayOf(0x1D, 0x56, 0x41, 0x10)) // cut full
+
+            outputStream.flush()
+        } catch (e: Exception) {
+            Log.e("Printer", "Failed to print logo: ${e.message}")
+        }
+    }
+
+
+    private fun printReceiptWithEscPos(
+        outputStream: OutputStream,
+        paperSize: String
+    ) {
+        val escPos = EscPos(outputStream)
+        Log.i("PreviewActivity", "paper Size in mm $paperSize")
+        val maxItemWidth = when (paperSize.lowercase()) {
+            "58mm", "58" -> 24
+            "76mm", "76" -> 32
+            "80mm", "80" -> 36
+            else -> 32
+        }
+        Log.i("PreviewActivity", "paper Size in inch{$maxItemWidth}")
+
+        val boldCenter = Style()
+            .setBold(true)
+            .setJustification(EscPosConst.Justification.Center)
+
+        val bigBoldCenter = Style()
+            .setBold(true)
+            .setFontSize(Style.FontSize._2, Style.FontSize._2)
+            .setJustification(EscPosConst.Justification.Center)
+
+        // Header
+        //print shop logo
+        printCenteredLogo(outputStream, R.drawable.ic_setting, printerWidthDots = 576)
+        //printCenteredLogo(outputStream, R.drawable.ic_setting)
+        // ===== LOGO =====
+//        val logo = BitmapFactory.decodeResource(resources, R.drawable.ic_setting)
+//        val scaledLogo = Bitmap.createScaledBitmap(logo, 384, 120, true)
+//
+//        outputStream.write(bitmapToEscPos(scaledLogo))
+//        outputStream.flush()
+
+        // 2️⃣ Send image
+//        val bitmap = drawableToBitmap(R.drawable.ic_printer)
+//        val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 150, 15
+//            0, true)
+//        val imageBytes = bitmapToEscPos(scaledBitmap)
+//        outputStream.write(imageBytes)
+//        outputStream.flush()
+
+
+
+        /*escPos.writeLF(boldCenter, "=".repeat(48))
+        //add image R.drawable.ic_setting
+        escPos.writeLF(bigBoldCenter, "Dora Storee")
+        escPos.writeLF(boldCenter, "=".repeat(48))
+        escPos.feed(1)
+
+        // Address
+        escPos.writeLF(Style().setJustification(EscPosConst.Justification.Center), tvAddress.text.toString())
+        escPos.writeLF(Style().setJustification(EscPosConst.Justification.Center), tvPhone.text.toString())
+        escPos.feed(1)
+
+        // Receipt title
+        escPos.writeLF(bigBoldCenter, "RECEIPT")
+        escPos.feed(1)
+
+        // Date
+        escPos.writeLF(
+            Style().setJustification(EscPosConst.Justification.Center),
+            "Date: ${tvDateTime.text}"
+        )
+        escPos.feed(1)
+
+        escPos.writeLF("-".repeat(48))
+
+        // Column header
+        escPos.writeLF(
+            Style().setBold(true),
+            String.format("%-${maxItemWidth}s %10s", "ITEM", "AMOUNT")
+        )
+        escPos.writeLF("-".repeat(48))
+
+        // Items
+        val items = (rvItems.adapter as PreviewAdapter).getItems()
+
+        items.forEach { item ->
+            val name = if (item.key.length > maxItemWidth)
+                item.key.take(maxItemWidth - 3) + "..."
+            else item.key
+
+            escPos.writeLF(
+                String.format("%-${maxItemWidth}s %10s", name, item.value)
+            )
+        }
+
+        escPos.feed(1)
+        escPos.writeLF("-".repeat(48))
+
+        // Total
+        escPos.writeLF(
+            Style()
+                .setBold(true)
+                .setFontSize(Style.FontSize._2, Style.FontSize._1),
+            String.format("%-${maxItemWidth}s %10s", "TOTAL", tvTotal.text.toString())
+        )
+
+        escPos.feed(2)
+
+        // Footer
+        escPos.writeLF(boldCenter, "Thank you for your visit!")
+        escPos.writeLF(Style().setJustification(EscPosConst.Justification.Center), "Please visit again!")
+        escPos.feed(3)*/
+
+
+        escPos.writeLF(boldCenter, "Thank you for your visit!")
+        // Cut paper
+        escPos.cut(EscPos.CutMode.FULL)
+
+        escPos.close()
+    }
+
+    // Helper function to load bitmap from drawable
+    private fun getLogoBitmapFromDrawable(): Bitmap {
+        val drawable = ContextCompat.getDrawable(this, R.drawable.ic_setting)
+        val bitmap = createBitmap(drawable?.intrinsicWidth ?: 0, drawable?.intrinsicHeight ?: 0)
+         try {
+            val canvas = Canvas(bitmap)
+            drawable?.setBounds(0, 0, canvas.width, canvas.height)
+            drawable?.draw(canvas)
+
+            // If the image has transparency, make it black and white for thermal printer
+            return convertToBlackAndWhite(bitmap)
+
+        } catch (e: Exception) {
+            Log.e("PreviewActivity", "Error creating bitmap: ${e.message}")
+
+        }
+        return bitmap
+    }
+    // Convert image to black and white for thermal printer
+    private fun convertToBlackAndWhite(bitmap: Bitmap): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+
+        // Create output bitmap
+        val bwBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+
+        // Process each pixel
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                val pixel = bitmap.getPixel(x, y)
+
+                // Get alpha channel
+                val alpha = Color.alpha(pixel)
+
+                if (alpha < 128) {
+                    // Transparent or semi-transparent: make white
+                    bwBitmap.setPixel(x, y, Color.WHITE)
+                } else {
+                    // Convert to grayscale
+                    val red = Color.red(pixel)
+                    val green = Color.green(pixel)
+                    val blue = Color.blue(pixel)
+
+                    // Luminance formula
+                    val luminance = (0.299 * red + 0.587 * green + 0.114 * blue).toInt()
+
+                    // Use threshold to decide black or white
+                    val threshold = 128
+                    val color = if (luminance < threshold) Color.BLACK else Color.WHITE
+
+                    bwBitmap.setPixel(x, y, color)
+                }
+            }
+        }
+
+        return bwBitmap
+    }
+
+    /*private fun printReceiptWithLibrary(paperSize: String) {
+        outputStream?.let { os ->
+            // Create commander for paper size
+            val commander = when (paperSize.toLowerCase()) {
+                "58mm", "58" -> Commander(Commander.PaperSize.PAPER_58_MM)
+                "76mm", "76" -> Commander(Commander.PaperSize.PAPER_76_MM)
+                "80mm", "80" -> Commander(Commander.PaperSize.PAPER_80_MM)
+                else -> Commander(Commander.PaperSize.PAPER_80_MM)
+            }
+
+            // Get data from UI
+            val adapter = rvItems.adapter as PreviewAdapter
+            val items = adapter.getItems()
+
+            // Start building receipt
+            commander.reset()
+
+            // Store header with proper alignment
+            commander.feed(1)
+            commander.write("=".repeat(48), Alignment.CENTER, Style().setBold(true))
+            commander.feed(1)
+            commander.write("YOUR STORE NAME", Alignment.CENTER,
+                Style().setTextSize(TextSize.DOUBLE_HEIGHT).setBold(true))
+            commander.feed(1)
+            commander.write("=".repeat(48), Alignment.CENTER, Style().setBold(true))
+            commander.feed(1)
+
+            // Store address (handles multi-line automatically)
+            commander.write(tvAddress.text.toString(), Alignment.CENTER)
+            commander.write(tvPhone.text.toString(), Alignment.CENTER)
+            commander.feed(1)
+
+            // Receipt title
+            commander.write("RECEIPT", Alignment.CENTER,
+                Style().setTextSize(TextSize.DOUBLE_HEIGHT_DOUBLE_WIDTH).setBold(true))
+            commander.feed(1)
+
+            // Date and time
+            commander.write("Date: ${tvDateTime.text}", Alignment.CENTER)
+            commander.feed(1)
+
+            // Divider line
+            commander.write("-".repeat(48), Alignment.CENTER)
+            commander.feed(1)
+
+            // Column headers with proper spacing
+            val maxItemWidth = when (paperSize.toLowerCase()) {
+                "58mm", "58" -> 24
+                "76mm", "76" -> 32
+                "80mm", "80" -> 36
+                else -> 32
+            }
+
+            commander.write(
+                String.format("%-${maxItemWidth}s %10s", "ITEM", "AMOUNT"),
+                Alignment.LEFT,
+                Style().setBold(true)
+            )
+            commander.feed(1)
+
+            commander.write("-".repeat(48), Alignment.CENTER)
+            commander.feed(1)
+
+            // Items list with proper formatting
+            items.forEach { item ->
+                val itemName = if (item.key.length > maxItemWidth) {
+                    item.key.substring(0, maxItemWidth - 3) + "..."
+                } else {
+                    item.key
+                }
+
+                commander.write(
+                    String.format("%-${maxItemWidth}s %10s", itemName, item.value),
+                    Alignment.LEFT
+                )
+                commander.feed(1)
+            }
+
+            commander.feed(1)
+
+            // Total section
+            commander.write("-".repeat(48), Alignment.CENTER)
+            commander.feed(1)
+
+            commander.write(
+                String.format("%-${maxItemWidth}s %10s", "TOTAL", tvTotal.text.toString()),
+                Alignment.LEFT,
+                Style().setBold(true).setTextSize(TextSize.DOUBLE_HEIGHT)
+            )
+            commander.feed(2)
+
+            // Thank you message
+            commander.write("Thank you for your visit!", Alignment.CENTER,
+                Style().setBold(true))
+            commander.feed(1)
+            commander.write("Please visit again!", Alignment.CENTER)
+            commander.feed(3)
+
+            // Paper cut
+            commander.cut()
+
+            // Get the bytes and send to printer
+            val commands = commander.getBytes()
+            os.write(commands)
+            os.flush()
+
+        } ?: throw PrintException("No output stream available")
+    }*/
+
+    // Alternative: Simple manual formatting without library
+    private fun printReceiptManualFormat(paperSize: String) {
+        outputStream?.let { os ->
+            // Initialize printer
+            os.write(byteArrayOf(0x1B, 0x40))
+
+            // Get paper width
+            val paperWidth = when (paperSize.lowercase(getDefault())) {
+                "58mm", "58" -> 32
+                "76mm", "76" -> 42
+                "80mm", "80" -> 48
+                else -> 48
+            }
+
+            // Get data
+            val adapter = rvItems.adapter as PreviewAdapter
+            val items = adapter.getItems()
+
+            // Helper functions for manual formatting
+            fun centerText(text: String): String {
+                val padding = (paperWidth - text.length) / 2
+                val leftPadding = " ".repeat(maxOf(0, padding))
+                return leftPadding + text
+            }
+
+            fun leftRightAlign(leftText: String, rightText: String): String {
+                val spaceCount = paperWidth - leftText.length - rightText.length
+                return if (spaceCount > 0) {
+                    leftText + " ".repeat(spaceCount) + rightText
+                } else {
+                    // Truncate left text if too long
+                    val truncatedLeft = leftText.substring(0, paperWidth - rightText.length - 3) + "..."
+                    truncatedLeft + " " + rightText
+                }
+            }
+
+            // Print receipt
+            os.write(byteArrayOf(0x1B, 0x61, 0x01)) // Center align
+
+            // Store info
+            os.write("${"=".repeat(paperWidth)}\n".toByteArray())
+            os.write("${centerText("YOUR STORE NAME")}\n".toByteArray())
+            os.write("${"=".repeat(paperWidth)}\n".toByteArray())
+            os.write("\n".toByteArray())
+
+            // Address
+            os.write("${centerText(tvAddress.text.toString())}\n".toByteArray())
+            os.write("${centerText(tvPhone.text.toString())}\n".toByteArray())
+            os.write("\n".toByteArray())
+
+            // Receipt title
+            os.write(byteArrayOf(0x1D, 0x21, 0x11)) // Double height & width
+            os.write("${centerText("RECEIPT")}\n".toByteArray())
+            os.write(byteArrayOf(0x1D, 0x21, 0x00)) // Normal size
+            os.write("\n".toByteArray())
+
+            // Date
+            os.write("${centerText("Date: ${tvDateTime.text}")}\n".toByteArray())
+            os.write("\n".toByteArray())
+
+            // Divider
+            os.write("${"-".repeat(paperWidth)}\n".toByteArray())
+
+            // Column headers
+            os.write(byteArrayOf(0x1B, 0x61, 0x00)) // Left align
+            os.write(byteArrayOf(0x1B, 0x45, 0x01)) // Bold on
+            os.write("${leftRightAlign("ITEM", "AMOUNT")}\n".toByteArray())
+            os.write(byteArrayOf(0x1B, 0x45, 0x00)) // Bold off
+
+            os.write("${"-".repeat(paperWidth)}\n".toByteArray())
+
+            // Items
+            items.forEach { item ->
+                os.write("${leftRightAlign(item.key, item.value)}\n".toByteArray())
+            }
+
+            os.write("\n".toByteArray())
+            os.write("${"-".repeat(paperWidth)}\n".toByteArray())
+
+            // Total
+            os.write(byteArrayOf(0x1B, 0x45, 0x01)) // Bold on
+            os.write("${leftRightAlign("TOTAL", tvTotal.text.toString())}\n".toByteArray())
+            os.write(byteArrayOf(0x1B, 0x45, 0x00)) // Bold off
+
+            os.write("\n".toByteArray())
+
+            // Thank you message
+            os.write(byteArrayOf(0x1B, 0x61, 0x01)) // Center align
+            os.write("${"=".repeat(paperWidth)}\n".toByteArray())
+            os.write("${centerText("Thank you for your visit!")}\n".toByteArray())
+            os.write("${"=".repeat(paperWidth)}\n".toByteArray())
+
+            // Cut paper
+            os.write(byteArrayOf(0x0A, 0x0A, 0x0A))
+            os.write(byteArrayOf(0x1D, 0x56, 0x41, 0x10))
+
+            os.flush()
+
+        } ?: throw PrintException("No output stream available")
+    }
+
+    private fun showNoPrinterDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("No Printer Selected")
+            .setMessage("Please select a printer from the menu")
+            .setPositiveButton("Select Printer") { _, _ ->
+                val intent = Intent(this, PrinterListActivity::class.java)
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showErrorDialog(title: String, message: String) {
+
+            AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(message)
+                .setPositiveButton("OK", null)
+                .show()
+
+    }
+
+    class PrintException(message: String) : Exception(message)
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_printer, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_printer -> {
+                val intent = Intent(this, PrinterListActivity::class.java)
+                startActivity(intent)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        try {
+            outputStream?.close()
+            bluetoothSocket?.close()
+        } catch (e: IOException) {
+            Log.e("PreviewActivity", "Error closing connections: ${e.message}")
+        }
+        printerExecutor.shutdown()
+    }
+}

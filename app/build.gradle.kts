@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
     implementation(libs.coroutines.android)
+    implementation(libs.coil)
     //implementation(libs.escpos.coffee)
     implementation(libs.escpos)
     // Add Printooth library

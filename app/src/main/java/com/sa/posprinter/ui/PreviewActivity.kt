@@ -42,6 +42,9 @@ import com.dantsu.escposprinter.textparser.PrinterTextParserImg
 import com.sa.posprinter.data.api.ApiClient
 import com.sa.posprinter.data.model.ReceiptResponse
 import com.google.android.material.appbar.MaterialToolbar
+import coil.load
+import coil.imageLoader
+import coil.request.ImageRequest
 import com.sa.posprinter.R
 import com.sa.posprinter.model.PreviewItem
 import com.sa.posprinter.model.PrinterData
@@ -78,6 +81,7 @@ class PreviewActivity : AppCompatActivity() {
     private lateinit var tvError: TextView
     private lateinit var btnTryAgain: Button
     private lateinit var progressBar: ProgressBar
+    private lateinit var ivLogo: ImageView
     private lateinit var printerPref: PrinterPreference
     private lateinit var mContext: Context
     private var bluetoothAdapter: BluetoothAdapter? = null
@@ -89,11 +93,14 @@ class PreviewActivity : AppCompatActivity() {
     private var languageType: String = "mm" // "en" or "mm", will be set from deep link
     private var orderId: String = "1" // will be set from deep link
 
+    private var shopLogoBitmap: Bitmap? = null
+
     companion object {
         const val EXTRA_ORDER_ID = "extra_order_id"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_preview)
         mContext = this
@@ -161,6 +168,7 @@ class PreviewActivity : AppCompatActivity() {
         tvError = findViewById(R.id.txtError)
         btnTryAgain = findViewById(R.id.btnTryAgain)
         progressBar = findViewById(R.id.progressBar)
+        ivLogo = findViewById(R.id.ivLogo)
 
         btnPrint.setOnClickListener {
             val printer = printerPref.getPrinter()
@@ -205,7 +213,19 @@ class PreviewActivity : AppCompatActivity() {
         val footer = response.data.receipt.footer
         languageType = response.data.locale
 
-        ivLogo
+        // Display logo using Coil
+        ivLogo.load(header.shopLogo)
+
+        // Load logo as bitmap for printing
+        lifecycleScope.launch {
+            shopLogoBitmap = withContext(Dispatchers.IO) {
+                val request = ImageRequest.Builder(mContext)
+                    .data(header.shopLogo)
+                    .allowHardware(false) // required for bitmap access
+                    .build()
+                imageLoader.execute(request).drawable?.toBitmap()
+            }
+        }
         tvShopName.text = header.shopName
         tvAddress.text = header.shopAddress
         tvPhone.text = header.shopPhone
@@ -430,19 +450,16 @@ class PreviewActivity : AppCompatActivity() {
             else -> Triple(48, 34, 12)
         }
 
-        val drawable = AppCompatResources.getDrawable(mContext, R.drawable.ic_printer)
         val printerWidthPx = getPrinterWidthInPixels(paperSize)
-        
-        // Resize logo to desired size (e.g., 100x100 pixels)
-        val logoBitmap = drawable?.toBitmap()?.let { 
-            Bitmap.createScaledBitmap(it, 100, 100, true)
-        }
-        val imageHex = PrinterTextParserImg.bitmapToHexadecimalString(printer, logoBitmap)
-        
+
         val receiptText = buildString {
-            // Logo image
-            appendLine("[C]<img>$imageHex</img>")
-            appendLine()
+            // Logo image - only print if available
+            shopLogoBitmap?.let { logo ->
+                val logoBitmap = Bitmap.createScaledBitmap(logo, 150, 150, true)
+                val imageHex = PrinterTextParserImg.bitmapToHexadecimalString(printer, logoBitmap)
+                appendLine("[C]<img>$imageHex</img>")
+                appendLine()
+            }
 
 
                 // Myanmar mode - all text as bitmap

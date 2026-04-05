@@ -46,6 +46,9 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     implementation(libs.gson)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.gson)
+    implementation(libs.coroutines.android)
     //implementation(libs.escpos.coffee)
     implementation(libs.escpos)
     // Add Printooth library

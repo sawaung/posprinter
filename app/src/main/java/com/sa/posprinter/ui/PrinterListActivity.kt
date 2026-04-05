@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothSocket
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -108,6 +109,20 @@ class PrinterListActivity : AppCompatActivity() {
 
         btnBack.setOnClickListener {
             finish()
+        }
+        toolbar.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.action_refresh -> {
+                    Log.i("PrinterListActivity", "refresh item is clicked")
+                    if(hasBluetoothPermission()){
+                        loadPairedDevices()
+                    }else{
+                        requestBluetoothPermissionWithRationale()
+                    }
+                    true
+                }
+                else -> false
+        }
         }
     }
 

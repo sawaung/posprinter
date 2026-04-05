@@ -27,34 +27,32 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        //setupWebView()
+        setupWebView()
 
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     fun setupWebView(){
         webView = findViewById(R.id.webView)
-        webView.settings.javaScriptEnabled = true
+        webView.settings.apply {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            databaseEnabled = true
+            javaScriptCanOpenWindowsAutomatically = true
+        }
         webView.addJavascriptInterface(WebAppInterface(this), "Android")
-        //add a button to webView
-        webView.loadDataWithBaseURL(
-            null,
-            loadHTMLContent(),
-            "text/html",
-            "UTF-8",
-            null
-        );
+        webView.loadUrl("https://pos.ziigwat.com")
     }
 
     fun loadHTMLContent() = """
             <!DOCTYPE html>
             <html>
                 <body>
-                    <button onclick="handleSubmit()">Submit Form</button>
+                    <button onclick="handlePrint()">Print</button>
                     <script>
-                        function handleSubmit() {
-                            if (window.Android && window.Android.showToast) {
-                                 window.Android.showToast('Form submitted successfully!');
+                        function handlePrint() {
+                            if (window.Android && window.Android.openReceipt) {
+                                window.Android.openReceipt('1');
                             }
                         }
                     </script>

@@ -31,264 +31,308 @@
 
     <!-- Content -->
     <LinearLayout
+        android:id="@+id/mainLayoutWrapper"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
         android:layout_marginTop="?attr/actionBarSize"
+        android:orientation="vertical"
         android:padding="12dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <!-- Scrollable Receipt -->
-        <ScrollView
+        <LinearLayout
+            android:id="@+id/mainLayout"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1">
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:layout_marginTop="?attr/actionBarSize"
+            android:padding="12dp"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            android:visibility="visible">
 
-            <LinearLayout
+            <!-- Scrollable Receipt -->
+            <ScrollView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="12dp"
-                android:background="@android:color/white">
+                android:layout_height="0dp"
+                android:layout_weight="1">
 
-                <ImageView
-                    android:id="@+id/ivLogo"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:adjustViewBounds="true"
-                    android:scaleType="fitCenter"
-                    android:src="@drawable/ic_setting"
-                    android:maxWidth="100dp"
-                    android:maxHeight="100dp"
-                    android:layout_marginBottom="8dp"
-                    android:layout_gravity="center" />
-                <!-- shop name -->
-                <TextView
-                    android:id="@+id/tvShopName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="Dora Storee"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:textAlignment="center" />
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:background="@android:color/white">
 
-
-
-                <!-- Address -->
-                <TextView
-                    android:id="@+id/tvAddress"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="No.12, Main Road, Yangon"
-                    android:textSize="14sp"
-                    android:textAlignment="center" />
-
-                <!-- receipt -->
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="*** Receipt ****"
-                    android:layout_marginTop="8dp"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textAlignment="center" />
-
-                <!-- Phone -->
-                <TextView
-                    android:id="@+id/tvPhone"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="Phone: 09-123456789"
-                    android:textSize="14sp"
-                    android:textAlignment="center"
-                    android:visibility="gone"
-                    android:layout_marginBottom="8dp" />
-
-                <androidx.constraintlayout.widget.ConstraintLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp">
-
-                    <LinearLayout
-                        android:id="@+id/layoutInvoice"
-                        android:layout_width="wrap_content"
+                    <ImageView
+                        android:id="@+id/ivLogo"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Invoice No:"
-                            android:textSize="14sp"
-                            android:layout_marginRight="4dp"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
-                        <TextView
-                            android:id="@+id/tvInvoiceNo"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="1212"
-                            android:textSize="14sp"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/layoutCashier"
-                        android:layout_width="wrap_content"
+                        android:adjustViewBounds="true"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_setting"
+                        android:maxWidth="100dp"
+                        android:maxHeight="100dp"
+                        android:layout_marginBottom="8dp"
+                        android:layout_gravity="center" />
+                    <!-- shop name -->
+                    <TextView
+                        android:id="@+id/tvShopName"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Cashier:"
+                        android:layout_marginTop="16dp"
+                        android:text="Dora Storee"
                         android:textSize="14sp"
-                        android:layout_marginRight="4dp"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/layoutInvoice">
+                        android:textStyle="bold"
+                        android:textAlignment="center" />
 
-                        <TextView
+
+
+                    <!-- Address -->
+                    <TextView
+                        android:id="@+id/tvAddress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="No.12, Main Road, Yangon"
+                        android:textSize="14sp"
+                        android:textAlignment="center" />
+
+                    <!-- receipt -->
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="*** Receipt ****"
+                        android:layout_marginTop="8dp"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textAlignment="center" />
+
+                    <!-- Phone -->
+                    <TextView
+                        android:id="@+id/tvPhone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Phone: 09-123456789"
+                        android:textSize="14sp"
+                        android:textAlignment="center"
+                        android:visibility="gone"
+                        android:layout_marginBottom="8dp" />
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp">
+
+                        <LinearLayout
+                            android:id="@+id/layoutInvoice"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent">
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Invoice No:"
+                                android:textSize="14sp"
+                                android:layout_marginRight="4dp"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+                            <TextView
+                                android:id="@+id/tvInvoiceNo"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="1212"
+                                android:textSize="14sp"
+                                app:layout_constraintStart_toStartOf="parent"
+                                app:layout_constraintTop_toTopOf="parent" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/layoutCashier"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Cashier:"
                             android:textSize="14sp"
-                            android:layout_marginRight="4dp"/>
+                            android:layout_marginRight="4dp"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toBottomOf="@+id/layoutInvoice">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Cashier:"
+                                android:textSize="14sp"
+                                android:layout_marginRight="4dp"/>
+                            <TextView
+                                android:id="@+id/tvCashier"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Dora Storee"
+                                android:textSize="14sp"
+                                android:layout_marginRight="4dp"/>
+                        </LinearLayout>
+
+                        <!-- Date Time -->
                         <TextView
-                            android:id="@+id/tvCashier"
+                            android:id="@+id/tvDateTime"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Dora Storee"
+                            android:text="29/01/2026"
                             android:textSize="14sp"
-                            android:layout_marginRight="4dp"/>
+                            app:layout_constraintRight_toRightOf="parent"
+                            app:layout_constraintTop_toBottomOf="@+id/layoutInvoice"
+                            />
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                    <!-- Dynamic key-value list -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvItems"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp" />
+
+                    <!-- Total -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="8dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Subtotal" />
+
+                        <TextView
+                            android:id="@+id/tvSubTotal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="8,500"/>
                     </LinearLayout>
 
-                    <!-- Date Time -->
-                    <TextView
-                        android:id="@+id/tvDateTime"
-                        android:layout_width="wrap_content"
+                    <!-- Total -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="29/01/2026"
-                        android:textSize="14sp"
-                        app:layout_constraintRight_toRightOf="parent"
-                        app:layout_constraintTop_toBottomOf="@+id/layoutInvoice"
-                        />
-                </androidx.constraintlayout.widget.ConstraintLayout>
+                        android:orientation="horizontal"
+                        android:layout_marginTop="0dp">
 
-                <!-- Dynamic key-value list -->
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/rvItems"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:nestedScrollingEnabled="false"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Discount"/>
 
-                <!-- Total -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="8dp">
+                        <TextView
+                            android:id="@+id/tvDiscount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="8,500" />
+                    </LinearLayout>
 
-                    <TextView
-                        android:layout_width="0dp"
+                    <!-- Total -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Subtotal" />
+                        android:orientation="horizontal"
+                        android:layout_marginTop="8dp">
 
-                    <TextView
-                        android:id="@+id/tvSubTotal"
-                        android:layout_width="wrap_content"
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Total Amount"/>
+
+                        <TextView
+                            android:id="@+id/tvTotalAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="8,500" />
+                    </LinearLayout>
+                    <!-- Total -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="8,500"/>
+                        android:orientation="horizontal"
+                        android:layout_marginTop="0dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Unpaid Amount"/>
+
+                        <TextView
+                            android:id="@+id/tvUnpaidAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="8,500" />
+                    </LinearLayout>
+                    <!-- Total -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="0dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Paid Amount"/>
+
+                        <TextView
+                            android:id="@+id/tvPaidAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="8,500" />
+                    </LinearLayout>
                 </LinearLayout>
+            </ScrollView>
 
-                <!-- Total -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="0dp">
+            <!-- Print Button -->
+            <Button
+                android:id="@+id/btnPrint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="PRINT"
+                android:layout_marginTop="8dp" />
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Discount"/>
-
-                    <TextView
-                        android:id="@+id/tvDiscount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="8,500" />
-                </LinearLayout>
-
-                <!-- Total -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="8dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Total Amount"/>
-
-                    <TextView
-                        android:id="@+id/tvTotalAmount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="8,500" />
-                </LinearLayout>
-                <!-- Total -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="0dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Unpaid Amount"/>
-
-                    <TextView
-                        android:id="@+id/tvUnpaidAmount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="8,500" />
-                </LinearLayout>
-                <!-- Total -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="0dp">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Paid Amount"/>
-
-                    <TextView
-                        android:id="@+id/tvPaidAmount"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="8,500" />
-                </LinearLayout>
-            </LinearLayout>
-        </ScrollView>
-
-        <!-- Print Button -->
-        <Button
-            android:id="@+id/btnPrint"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="PRINT"
-            android:layout_marginTop="8dp" />
-
+        </LinearLayout>
     </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_anchor="@+id/mainLayoutWrapper"
+        app:layout_anchorGravity="center"
+        android:visibility="gone"/>
+
+    <LinearLayout
+        android:id="@+id/errorLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_anchor="@+id/mainLayoutWrapper"
+        app:layout_anchorGravity="center"
+        android:visibility="gone">
+        <TextView
+            android:id="@+id/txtError"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="error"
+            android:layout_marginBottom="16dp"/>
+        <Button
+            android:id="@+id/btnTryAgain"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:text="Try Again"/>
+    </LinearLayout>
+
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -11,6 +11,7 @@
 
     <!-- Needed by many printer SDKs -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
 
     <application
@@ -23,7 +24,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MyApplication">
         <activity
-            android:name=".ui.PreviewActivity"
+            android:name=".ui.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -34,6 +35,11 @@
 
         <activity
             android:name=".ui.PrinterListActivity"
+            android:exported="true">
+        </activity>
+
+        <activity
+            android:name=".ui.PreviewActivity"
             android:exported="true">
         </activity>
     </application>

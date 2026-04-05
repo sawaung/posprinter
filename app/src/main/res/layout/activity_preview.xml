@@ -44,7 +44,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:layout_marginTop="?attr/actionBarSize"
             android:padding="12dp"
             app:layout_behavior="@string/appbar_scrolling_view_behavior"
             android:visibility="visible">
@@ -78,7 +77,7 @@
                         android:id="@+id/tvShopName"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
+                        android:layout_marginTop="12dp"
                         android:text="Dora Storee"
                         android:textSize="14sp"
                         android:textStyle="bold"
@@ -232,6 +231,25 @@
                             android:text="8,500" />
                     </LinearLayout>
 
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="0dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Tax"/>
+
+                        <TextView
+                            android:id="@+id/tvTax"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="500" />
+                    </LinearLayout>
+
                     <!-- Total -->
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -243,7 +261,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Total Amount"/>
+                            android:text="Total"/>
 
                         <TextView
                             android:id="@+id/tvTotalAmount"
@@ -289,6 +307,25 @@
                             android:layout_height="wrap_content"
                             android:text="8,500" />
                     </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="0dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Paid Amount"/>
+
+                        <TextView
+                            android:id="@+id/tvRefundAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="500" />
+                    </LinearLayout>
                 </LinearLayout>
             </ScrollView>
 
@@ -321,7 +358,7 @@
         app:layout_anchorGravity="center"
         android:visibility="gone">
         <TextView
-            android:id="@+id/txtError"
+            android:id="@+id/tvError"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="error"

@@ -35,7 +35,8 @@ data class ReceiptHeader(
     @SerializedName("shop_logo") val shopLogo: String,
     @SerializedName("shop_name") val shopName: String,
     @SerializedName("shop_address") val shopAddress: String,
-    @SerializedName("shop_phone") val shopPhone: String
+    @SerializedName("shop_phone") val shopPhone: String,
+    @SerializedName("cashier_name") val cashierName: String = "Cashier: 01"
 )
 
 data class ReceiptItem(

@@ -61,27 +61,13 @@ import java.util.Locale.getDefault
 import java.util.concurrent.Executors
 import kotlin.math.min
 import androidx.core.graphics.createBitmap
+import com.sa.posprinter.databinding.ActivityMainBinding
+import com.sa.posprinter.databinding.ActivityPreviewBinding
+import com.sa.posprinter.util.utils
+import com.sa.posprinter.util.utils.Companion.formatAmount
+import com.sa.posprinter.util.utils.Companion.myDateTimeFormatter
 
 class PreviewActivity : AppCompatActivity() {
-    private lateinit var mainLayout: LinearLayout
-    private lateinit var errorLayout: LinearLayout
-    private lateinit var rvItems: RecyclerView
-    private lateinit var tvShopName: TextView
-    private lateinit var tvCashier: TextView
-    private lateinit var tvInvoiceNo: TextView
-    private lateinit var tvAddress: TextView
-    private lateinit var tvPhone: TextView
-    private lateinit var tvDateTime: TextView
-    private lateinit var tvSubTotal: TextView
-    private lateinit var tvDiscount: TextView
-    private lateinit var tvTotalAmount: TextView
-    private lateinit var tvUnpaidAmount: TextView
-    private lateinit var tvPaidAmount: TextView
-    private lateinit var btnPrint: Button
-    private lateinit var tvError: TextView
-    private lateinit var btnTryAgain: Button
-    private lateinit var progressBar: ProgressBar
-    private lateinit var ivLogo: ImageView
     private lateinit var printerPref: PrinterPreference
     private lateinit var mContext: Context
     private var bluetoothAdapter: BluetoothAdapter? = null
@@ -94,22 +80,26 @@ class PreviewActivity : AppCompatActivity() {
     private var orderId: String = "1" // will be set from deep link
 
     private var shopLogoBitmap: Bitmap? = null
+    private var receiptNote: String = ""
 
     companion object {
         const val EXTRA_ORDER_ID = "extra_order_id"
     }
 
+    private lateinit var binding: ActivityPreviewBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_preview)
+        binding = ActivityPreviewBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         mContext = this
 
         printerPref = PrinterPreference(this)
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        setupToolbar()
+
         initMyanmarFont()
-        bindViews()
+        setClickEvent()
         orderId = intent.getStringExtra(EXTRA_ORDER_ID) ?: "1"
         fetchReceiptData()
     }
@@ -125,14 +115,26 @@ class PreviewActivity : AppCompatActivity() {
         }
     }
 
-    private fun setupToolbar() {
-        val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
-        val btnBack = findViewById<ImageView>(R.id.btnBack)
 
-        btnBack.setOnClickListener {
+    private fun setClickEvent() {
+
+        binding.btnPrint.setOnClickListener {
+            val printer = printerPref.getPrinter()
+            if (printer == null) {
+                showNoPrinterDialog()
+            } else {
+                executePrintJob(printer)
+            }
+        }
+
+        binding.btnTryAgain.setOnClickListener {
+            fetchReceiptData()
+        }
+
+        binding.btnBack.setOnClickListener {
             finish()
         }
-        toolbar.setOnMenuItemClickListener { menuItem ->
+        binding.toolbar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.action_printer -> {
                     // Handle settings click
@@ -144,114 +146,85 @@ class PreviewActivity : AppCompatActivity() {
                 else -> false
             }
         }
-
-        //setSupportActionBar(toolbar)
-
-    }
-
-    private fun bindViews() {
-        mainLayout = findViewById(R.id.mainLayout)
-        errorLayout = findViewById(R.id.errorLayout)
-        tvShopName = findViewById(R.id.tvShopName)
-        tvCashier = findViewById(R.id.tvCashier)
-        tvInvoiceNo = findViewById(R.id.tvInvoiceNo)
-        rvItems = findViewById(R.id.rvItems)
-        tvAddress = findViewById(R.id.tvAddress)
-        tvPhone = findViewById(R.id.tvPhone)
-        tvDateTime = findViewById(R.id.tvDateTime)
-        tvSubTotal = findViewById(R.id.tvSubTotal)
-        btnPrint = findViewById(R.id.btnPrint)
-        tvDiscount = findViewById(R.id.tvDiscount)
-        tvTotalAmount = findViewById(R.id.tvTotalAmount)
-        tvUnpaidAmount = findViewById(R.id.tvUnpaidAmount)
-        tvPaidAmount = findViewById(R.id.tvPaidAmount)
-        tvError = findViewById(R.id.txtError)
-        btnTryAgain = findViewById(R.id.btnTryAgain)
-        progressBar = findViewById(R.id.progressBar)
-        ivLogo = findViewById(R.id.ivLogo)
-
-        btnPrint.setOnClickListener {
-            val printer = printerPref.getPrinter()
-            if (printer == null) {
-                showNoPrinterDialog()
-            } else {
-                executePrintJob(printer)
-            }
-        }
-
-        btnTryAgain.setOnClickListener {
-            fetchReceiptData()
-        }
     }
 
     private fun fetchReceiptData() {
 
         lifecycleScope.launch {
             try {
-                mainLayout.visibility = View.GONE
-                progressBar.visibility = View.VISIBLE
-                errorLayout.visibility = View.GONE
+                binding.mainLayout.visibility = View.GONE
+                binding.progressBar.visibility = View.VISIBLE
+                binding.errorLayout.visibility = View.GONE
 
                 val response = withContext(Dispatchers.IO) {
                     ApiClient.service.getReceipt(orderId)
                 }
-                mainLayout.visibility = View.VISIBLE
-                progressBar.visibility = View.GONE
+                binding.mainLayout.visibility = View.VISIBLE
+                binding.progressBar.visibility = View.GONE
                 populatePreviewData(response)
             } catch (e: Exception) {
                 Log.e("PreviewActivity", "Failed to fetch receipt: ${e.message}")
-                errorLayout.visibility = View.VISIBLE
-                tvError.text = "Failed to load receipt data!"
+                binding.errorLayout.visibility = View.VISIBLE
+                binding.tvError.text = "Failed to load receipt data!"
                 //Toast.makeText(this@PreviewActivity, "Failed to load receipt data", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun populatePreviewData(response: ReceiptResponse) {
         val header = response.data.receipt.header
         val body = response.data.receipt.body
         val footer = response.data.receipt.footer
         languageType = response.data.locale
+        val currencySymbol = response.data.currency.symbol
 
-        // Display logo using Coil
-        ivLogo.load(header.shopLogo)
+        binding.ivLogo.load(header.shopLogo)
 
-        // Load logo as bitmap for printing
         lifecycleScope.launch {
             shopLogoBitmap = withContext(Dispatchers.IO) {
                 val request = ImageRequest.Builder(mContext)
                     .data(header.shopLogo)
-                    .allowHardware(false) // required for bitmap access
+                    .allowHardware(false)
                     .build()
                 imageLoader.execute(request).drawable?.toBitmap()
             }
         }
-        tvShopName.text = header.shopName
-        tvAddress.text = header.shopAddress
-        tvPhone.text = header.shopPhone
-        tvInvoiceNo.text = header.voucherNo
-        tvCashier.text = header.shopName
-        tvDateTime.text = header.voucherDate
 
-        val items = body.map { PreviewItem("${it.itemName} x${it.itemQuantity.toDouble().toInt()}", it.itemLineAmount) }
-        rvItems.layoutManager = LinearLayoutManager(this)
-        rvItems.adapter = PreviewAdapter(items)
+        binding.tvShopName.text = header.shopName
+        binding.tvAddress.text = header.shopAddress
+        binding.tvPhone.text = header.shopPhone
+        binding.tvInvoiceNo.text = header.voucherNo
+        binding.tvCashier.text = header.cashierName
+        binding.tvDateTime.text = myDateTimeFormatter(header.voucherDate)
 
-        tvSubTotal.text = footer.subtotal
-        tvDiscount.text = footer.discountTotal
-        tvTotalAmount.text = footer.grandTotal
-        tvUnpaidAmount.text = footer.unpaidAmount
-        tvPaidAmount.text = footer.paidAmount
+        val items = body.map {
+            PreviewItem(
+                "${it.itemQuantity.toDouble().toInt()} x ${it.itemName}",
+                "${formatAmount(it.itemLineAmount)} $currencySymbol"
+            )
+        }
+        binding.rvItems.layoutManager = LinearLayoutManager(this)
+        binding.rvItems.adapter = PreviewAdapter(items)
+
+        binding.tvSubTotal.text = "${formatAmount(footer.subtotal)} $currencySymbol"
+        binding.tvDiscount.text = "${formatAmount(footer.discountTotal)} $currencySymbol"
+        binding.tvTotalAmount.text = "${formatAmount(footer.grandTotal)} $currencySymbol"
+        binding.tvTax.text = "${formatAmount(footer.taxTotal)} $currencySymbol"
+        binding.tvUnpaidAmount.text = "${formatAmount(footer.unpaidAmount)} $currencySymbol"
+        binding.tvPaidAmount.text = "${formatAmount(footer.paidAmount)} $currencySymbol"
+        binding.tvRefundAmount.text = "${formatAmount(footer.refundAmount)} $currencySymbol"
+        receiptNote = footer.receiptNote
     }
 
     private fun setupPreviewData() {
         // Mock header data
-        tvShopName.text = "Dora Storee"
-        tvAddress.text = "အမှတ် ၁၄၄၊ ငု၀ါလမ်း၊ လှိုင်မြို့နယ်၊ ရန်ကုန်။"
-        tvPhone.text = "Phone: 09-123456789"
-        tvInvoiceNo.text = "293212"
-        tvCashier.text = "Dora Storee"
-        tvDateTime.text = getCurrentDate()
+        binding.tvShopName.text = "Dora Storee"
+        binding.tvAddress.text = "အမှတ် ၁၄၄၊ ငု၀ါလမ်း၊ လှိုင်မြို့နယ်၊ ရန်ကုန်။"
+        binding.tvPhone.text = "Phone: 09-123456789"
+        binding.tvInvoiceNo.text = "293212"
+        binding.tvCashier.text = "Dora Storee"
+        binding.tvDateTime.text = getCurrentDate()
 
         // Mock key-value data
         val items = listOf(
@@ -263,16 +236,16 @@ class PreviewActivity : AppCompatActivity() {
         )
 
 
-        rvItems.layoutManager = LinearLayoutManager(this)
-        rvItems.adapter = PreviewAdapter(items)
+        binding.rvItems.layoutManager = LinearLayoutManager(this)
+        binding.rvItems.adapter = PreviewAdapter(items)
 
 
         // Mock total
-        tvSubTotal.text = "10,500"
-        tvDiscount.text = "10,500"
-        tvTotalAmount.text = "10,500"
-        tvUnpaidAmount.text = "10,500"
-        tvPaidAmount.text = "10,500"
+        binding.tvSubTotal.text = "10,500"
+        binding.tvDiscount.text = "10,500"
+        binding.tvTotalAmount.text = "10,500"
+        binding.tvUnpaidAmount.text = "10,500"
+        binding.tvPaidAmount.text = "10,500"
     }
 
     private fun getCurrentDate(): String {
@@ -299,8 +272,8 @@ class PreviewActivity : AppCompatActivity() {
         }
 
         isPrinting = true
-        btnPrint.isClickable = false
-        btnPrint.text = "Printing..."
+        binding.btnPrint.isClickable = false
+        binding.btnPrint.text = "Printing..."
 
         lifecycleScope.launch {
             try {
@@ -318,13 +291,6 @@ class PreviewActivity : AppCompatActivity() {
                     val printer = createPrinter(connection, printerData.paperSize)
                     // Print the receipt
                     printReceipt(printer, printerData.paperSize)
-//                    btnPrint.isClickable = true
-//                    // 4️⃣ Success UI
-//                    Toast.makeText(
-//                        this@PreviewActivity,
-//                        "Receipt printed successfully",
-//                        Toast.LENGTH_SHORT
-//                    ).show()
                 }
 
             } catch (e: SecurityException) {
@@ -363,8 +329,8 @@ class PreviewActivity : AppCompatActivity() {
             } finally {
                 // 5️⃣ Cleanup
                 isPrinting = false
-                btnPrint.isClickable = true
-                btnPrint.text = "PRINT"
+                binding.btnPrint.isClickable = true
+                binding.btnPrint.text = "PRINT"
 
             }
         }
@@ -413,24 +379,28 @@ class PreviewActivity : AppCompatActivity() {
         return PrinterTextParserImg.bitmapToHexadecimalString(printer, bitmap)
     }
 
+    // Item row: left=Myanmar font, right=Default font
     private fun createItemRowBitmap(itemName: String, amount: String, maxWidth: Int, textSize: Float = 18f): Bitmap? {
         return try {
-            val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-            paint.color = Color.BLACK
-            paint.textSize = textSize
-            paint.typeface = myanmarTypeface
+            val leftPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.BLACK
+                this.textSize = textSize
+                typeface = myanmarTypeface
+            }
+            val rightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.BLACK
+                this.textSize = textSize
+                typeface = Typeface.DEFAULT
+            }
 
             val height = (textSize * 1.5f).toInt().coerceAtLeast(30)
             val bitmap = createBitmap(maxWidth, height, Bitmap.Config.ARGB_8888)
             val canvas = Canvas(bitmap)
             canvas.drawColor(Color.WHITE)
 
-            // Draw item name on left
-            canvas.drawText(itemName, 10f, height - 10f, paint)
-
-            // Draw amount on right
-            val amountWidth = paint.measureText(amount)
-            canvas.drawText(amount, maxWidth - amountWidth - 10f, height - 10f, paint)
+            canvas.drawText(itemName, 0f, height - 10f, leftPaint)
+            val amountWidth = rightPaint.measureText(amount)
+            canvas.drawText(amount, maxWidth - amountWidth - 4f, height - 10f, rightPaint)
 
             convertToMonochrome(bitmap)
         } catch (e: Exception) {
@@ -440,10 +410,10 @@ class PreviewActivity : AppCompatActivity() {
     }
 
     private fun printReceipt(printer: EscPosPrinter, paperSize: String) {
-        val adapter = rvItems.adapter as PreviewAdapter
+        val adapter = binding.rvItems.adapter as PreviewAdapter
         val items = adapter.getItems()
 
-        val (maxChars, itemWidth, amountWidth) = when (paperSize.lowercase(getDefault())) {
+        val (maxChars, width, height) = when (paperSize.lowercase(getDefault())) {
             "58mm", "58" -> Triple(32, 22, 8)
             "76mm", "76" -> Triple(42, 30, 10)
             "80mm", "80" -> Triple(48, 34, 12)
@@ -453,124 +423,90 @@ class PreviewActivity : AppCompatActivity() {
         val printerWidthPx = getPrinterWidthInPixels(paperSize)
 
         val receiptText = buildString {
-            // Logo image - only print if available
+
+            // Logo - only if available
             shopLogoBitmap?.let { logo ->
                 val logoBitmap = Bitmap.createScaledBitmap(logo, 150, 150, true)
                 val imageHex = PrinterTextParserImg.bitmapToHexadecimalString(printer, logoBitmap)
                 appendLine("[C]<img>$imageHex</img>")
-                appendLine()
             }
 
+            // Shop name - Myanmar font bitmap
+            textToImageHex(printer, binding.tvShopName.text.toString(), 24f, isBold = true)?.let {
+                appendLine("[C]<img>$it</img>")
+            }
 
-                // Myanmar mode - all text as bitmap
-//                textToImageHex(printer, tvShopName.text.toString(), 26f, isBold = true)?.let {
-//                    appendLine("[C]<img>$it</img>")
-//                }
-//                textToImageHex(printer, tvAddress.text.toString(),26f)?.let {
-//                    appendLine("[C]<img>$it</img>")
-//                }
-//                appendLine()
-//                textToImageHex(printer, "*** Receipt ***", 26f,isBold = true)?.let {
-//                    appendLine("[C]<img>$it</img>")
-//                }
+            // Shop address - Myanmar font bitmap
+            textToImageHex(printer, binding.tvAddress.text.toString(), 24f)?.let {
+                appendLine("[C]<img>$it</img>")
+            }
 
-//                appendLine()
-//                textToImageHex(printer, "Invoice No: ${tvInvoiceNo.text}",26f)?.let {
-//                    appendLine("[L]<img>$it</img>")
-//                }
-                
-                // Calculate spacing between cashier and datetime
-                val cashierText = "Cashier: ${tvCashier.text}"
-                val dateText = tvDateTime.text.toString()
-                val totalLength = cashierText.length + dateText.length
-                val spacesNeeded = maxChars - totalLength
-                val spacing = " ".repeat(spacesNeeded.coerceAtLeast(2))
-                
-                textToImageHex(printer, "$cashierText$spacing$dateText",26f)?.let {
-                    appendLine("[L]<img>$it</img>")
+            // Shop phone - plain text
+            appendLine("[C]${binding.tvPhone.text}")
+            appendLine("[C]${"-".repeat(maxChars)}")
+
+            // Voucher No
+            appendLine("[L]Voucher No: ${binding.tvInvoiceNo.text}")
+
+            // Cashier (left) and DateTime (right) on same row
+            createLeftRightTextBitmap(
+                "Cashier: ${binding.tvCashier.text}",
+                binding.tvDateTime.text.toString(),
+                printerWidthPx, 24f,0f
+            )?.let {
+                val hex = PrinterTextParserImg.bitmapToHexadecimalString(printer, it)
+                appendLine("[L]<img>$hex</img>")
+            }
+            appendLine("[C]${"-".repeat(maxChars)}")
+
+            // Item header
+            appendLine("[L]<b>ITEM[R]AMOUNT</b>")
+            appendLine("[C]${"-".repeat(maxChars)}")
+
+            // Items - Myanmar font for name, Default for amount
+            items.forEach { item ->
+                createItemRowBitmap(item.key, item.value, printerWidthPx, 24f)?.let { bitmap ->
+                    val hex = PrinterTextParserImg.bitmapToHexadecimalString(printer, bitmap)
+                    appendLine("[L]<img>$hex</img>")
                 }
+            }
 
-                createLeftRightTextBitmap(cashierText, dateText, printerWidthPx, 24f, leftPadding = 0f)?.let { bitmap ->
-                    val headerHex = PrinterTextParserImg.bitmapToHexadecimalString(printer, bitmap)
-                    appendLine("[L]<img>$headerHex</img>")
-                }
-//                appendLine()
-                //ITEM===============================AMOUNT //28
-                //ITEM                               AMOUNT
-                createLeftRightTextBitmap("ITEM", "AMOUNT", printerWidthPx, 24f, leftPadding = 0f)?.let { bitmap ->
-                    val headerHex = PrinterTextParserImg.bitmapToHexadecimalString(printer, bitmap)
-                    appendLine("[L]<img>$headerHex</img>")
-                }
-//                appendLine("[C]${"-".repeat(maxChars)}")
-//                appendLine()
-//
-//                items.forEach { item ->
-//                    createItemRowBitmap(item.key, item.value, printerWidthPx)?.let { bitmap ->
-//                        val itemHex = PrinterTextParserImg.bitmapToHexadecimalString(printer, bitmap)
-//                        appendLine("[L]<img>$itemHex</img>")
-//                    }
-//                }
-//
-//                appendLine()
-//                textToImageHex(printer, "Subtotal:   ${tvSubTotal.text}")?.let {
-//                    appendLine("[L]<img>$it</img>")
-//                }
-//                textToImageHex(printer, "Discount:   ${tvDiscount.text}")?.let {
-//                    appendLine("[L]<img>$it</img>")
-//                }
-//                appendLine()
-//                textToImageHex(printer, "Total Amount:   ${tvTotalAmount.text}")?.let {
-//                    appendLine("[L]<img>$it</img>")
-//                }
-//                textToImageHex(printer, "Unpaid Amount:   ${tvUnpaidAmount.text}")?.let {
-//                    appendLine("[L]<img>$it</img>")
-//                }
-//                textToImageHex(printer, "Paid Amount:   ${tvPaidAmount.text}")?.let {
-//                    appendLine("[L]<img>$it</img>")
-//                }
-//                appendLine()
-//                appendLine("[C]${"*".repeat(maxChars)}")
-//                textToImageHex(printer, "Thank you for Shopping!")?.let {
-//                    appendLine("[C]<img>$it</img>")
-//                }
+            appendLine("[C]${"-".repeat(maxChars)}")
 
-            /* ** For English Language
-            else {
-                // English mode - text only
-                appendLine("[C]<b>${tvShopName.text}</b>")  // Normal size (closest to 14sp)
-                appendLine("[C]${tvAddress.text}")
-                appendLine()
-                appendLine("[C]<b>*** Receipt ***</b>")
-                appendLine()
-                appendLine("[L]Invoice No: ${tvInvoiceNo.text}")
-                appendLine("[L]Cashier: ${tvCashier.text}  [R] ${tvDateTime.text}")
-                appendLine()
-                appendLine("<b>${"ITEM".padEnd(itemWidth)} ${"AMOUNT".padStart(amountWidth)}</b>")
-                appendLine("[C]${"-".repeat(maxChars)}")
-                appendLine()
+            // Totals - plain text
+            appendLine("[L]Subtotal[R]${binding.tvSubTotal.text}")
+            appendLine("[L]Discount[R]${binding.tvDiscount.text}")
+            appendLine("[L]Tax[R]${binding.tvTax.text}")
+            appendLine("[C]${"-".repeat(maxChars)}")
+            appendLine("[L]<b>Total[R]${binding.tvTotalAmount.text}</b>")
+            appendLine("[C]${"-".repeat(maxChars)}")
+            appendLine("[L]Unpaid Amount[R]${binding.tvUnpaidAmount.text}")
+            appendLine("[L]Paid Amount[R]${binding.tvPaidAmount.text}")
+            appendLine("[L]Refund Amount[R]${binding.tvRefundAmount.text}")
+            appendLine("[C]${"-".repeat(maxChars)}")
 
-                items.forEach { item ->
-                    val itemName = if (item.key.length > itemWidth) {
-                        item.key.substring(0, itemWidth - 3) + "..."
-                    } else {
-                        item.key.padEnd(itemWidth)
-                    }
-                    val amount = item.value.padStart(amountWidth)
-                    appendLine("$itemName $amount")
-                }
-
-                appendLine()
-                appendLine("[L]Subtotal:   [R] ${tvSubTotal.text}")
-                appendLine("[L]Discount:   [R] ${tvDiscount.text}")
-                appendLine()
-                appendLine("[L]Total Amount:   [R] ${tvTotalAmount.text}")
-                appendLine("[L]Unpaid Amount:   [R] ${tvUnpaidAmount.text}")
-                appendLine("[L]Paid Amount:   [R] ${tvPaidAmount.text}")
-                appendLine()
-                appendLine("[C]${"*".repeat(maxChars)}")
-                appendLine("[C]<b>Thank you for Shopping!</b>")
-            }*/
+            // Footer note
+            appendLine("[C]$receiptNote")
             appendLine()
+        }
+
+        val receiptText2 = buildString {
+            createLeftRightTextBitmap(
+                "Cashier: ${binding.tvCashier.text}",
+                binding.tvDateTime.text.toString(),
+                printerWidthPx, 24f,0f
+            )?.let {
+                val hex = PrinterTextParserImg.bitmapToHexadecimalString(printer, it)
+                appendLine("[L]<img>$hex</img>")
+            }
+            items.forEach { item ->
+                createItemRowBitmap(item.key, item.value, printerWidthPx, 24f)?.let { bitmap ->
+                    val hex = PrinterTextParserImg.bitmapToHexadecimalString(printer, bitmap)
+                    appendLine("[L]<img>$hex</img>")
+                }
+            }
+            appendLine("[L]Refund Amount[R]${binding.tvRefundAmount.text}")
+            appendLine("[C]${"-".repeat(maxChars)}")
         }
 
         printer.printFormattedText(receiptText)
@@ -684,20 +620,6 @@ class PreviewActivity : AppCompatActivity() {
         return result
     }
 
-    private fun resizeBitmapForPrinter(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
-        val originalWidth = bitmap.width
-        val originalHeight = bitmap.height
-
-        // Calculate scaling factor
-        val widthScale = maxWidth.toFloat() / originalWidth
-        val heightScale = maxHeight.toFloat() / originalHeight
-        val scaleFactor = minOf(widthScale, heightScale, 1.0f)
-
-        val newWidth = (originalWidth * scaleFactor).toInt().coerceAtLeast(1)
-        val newHeight = (originalHeight * scaleFactor).toInt().coerceAtLeast(1)
-
-        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
-    }
 
     private fun getPrinterWidthInPixels(paperSize: String): Int {
         return when (paperSize.lowercase(Locale.getDefault())) {

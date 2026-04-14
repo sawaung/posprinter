@@ -64,7 +64,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Test Connection"
-        app:backgroundTint="@color/teal_700"
+        app:backgroundTint="@color/md_primary"
         android:layout_marginBottom="8dp" />
 
     <com.google.android.material.button.MaterialButton

@@ -16,7 +16,7 @@
         <item name="colorOnSurface">@color/md_on_surface</item>
 
         <!-- Status bar -->
-        <item name="android:statusBarColor">@color/md_surface</item>
+        <item name="android:statusBarColor">@color/md_primary</item>
         <item name="android:windowLightStatusBar">false</item>
 
     </style>

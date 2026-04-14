@@ -22,10 +22,11 @@ class WebAppInterface(private val mContext: Context) {
     }
 
     @JavascriptInterface
-    fun openReceipt(orderId: String) {
-        Log.i("WebAppInterface", "openReceipt: $orderId")
+    fun openReceipt(receiptType: String,orderId: String) {
+        Log.i("WebAppInterface", "openReceipt: $receiptType / $orderId")
         val intent = Intent(mContext, PreviewActivity::class.java).apply {
             putExtra(PreviewActivity.EXTRA_ORDER_ID, orderId)
+            putExtra(PreviewActivity.EXTRA_RECEIPT_TYPE, receiptType)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
         mContext.startActivity(intent)

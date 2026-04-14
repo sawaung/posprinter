@@ -46,8 +46,8 @@
         android:id="@+id/chipDetail"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="detail"
-        app:chipBackgroundColor="@color/purple_500"
-        android:textColor="@android:color/white" />
+        android:text="Detail"
+        app:chipBackgroundColor="@color/md_on_surface"
+        android:textColor="@color/black" />
 
 </LinearLayout>

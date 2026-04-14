@@ -61,8 +61,11 @@ import java.util.Locale.getDefault
 import java.util.concurrent.Executors
 import kotlin.math.min
 import androidx.core.graphics.createBitmap
+import androidx.core.view.isVisible
 import com.sa.posprinter.databinding.ActivityMainBinding
 import com.sa.posprinter.databinding.ActivityPreviewBinding
+import com.sa.posprinter.util.showIfNotEmpty
+import com.sa.posprinter.util.showIfValueNotNull
 import com.sa.posprinter.util.utils
 import com.sa.posprinter.util.utils.Companion.formatAmount
 import com.sa.posprinter.util.utils.Companion.myDateTimeFormatter
@@ -77,13 +80,15 @@ class PreviewActivity : AppCompatActivity() {
     private var myanmarTypeface: Typeface? = null
     private var myanmarTypefaceBold: Typeface? = null
     private var languageType: String = "mm" // "en" or "mm", will be set from deep link
-    private var orderId: String = "1" // will be set from deep link
+    private var orderId: String = "1"
+    private var receiptStatus: String = "order"// will be set from deep link
 
     private var shopLogoBitmap: Bitmap? = null
     private var receiptNote: String = ""
 
     companion object {
         const val EXTRA_ORDER_ID = "extra_order_id"
+        const val EXTRA_RECEIPT_TYPE = "extra_order_type"
     }
 
     private lateinit var binding: ActivityPreviewBinding
@@ -101,6 +106,7 @@ class PreviewActivity : AppCompatActivity() {
         initMyanmarFont()
         setClickEvent()
         orderId = intent.getStringExtra(EXTRA_ORDER_ID) ?: "1"
+        receiptStatus = intent.getStringExtra(EXTRA_RECEIPT_TYPE) ?: "order"
         fetchReceiptData()
     }
 
@@ -157,14 +163,15 @@ class PreviewActivity : AppCompatActivity() {
                 binding.errorLayout.visibility = View.GONE
 
                 val response = withContext(Dispatchers.IO) {
-                    ApiClient.service.getReceipt(orderId)
+                    ApiClient.service.getReceipt(receiptStatus,orderId)
                 }
                 binding.mainLayout.visibility = View.VISIBLE
                 binding.progressBar.visibility = View.GONE
                 populatePreviewData(response)
             } catch (e: Exception) {
-                Log.e("PreviewActivity", "Failed to fetch receipt: ${e.message}")
+                Log.e("PreviewActivity", "Failed to fetch receipt: ${e.message},{$receiptStatus} / {$orderId}")
                 binding.errorLayout.visibility = View.VISIBLE
+                binding.progressBar.visibility = View.GONE
                 binding.tvError.text = "Failed to load receipt data!"
                 //Toast.makeText(this@PreviewActivity, "Failed to load receipt data", Toast.LENGTH_SHORT).show()
             }
@@ -176,45 +183,93 @@ class PreviewActivity : AppCompatActivity() {
         val header = response.data.receipt.header
         val body = response.data.receipt.body
         val footer = response.data.receipt.footer
-        languageType = response.data.locale
+        languageType = response.data.locale?.takeIf { it.isNotBlank() } ?: "en"
         val currencySymbol = response.data.currency.symbol
 
-        binding.ivLogo.load(header.shopLogo)
-
-        lifecycleScope.launch {
-            shopLogoBitmap = withContext(Dispatchers.IO) {
-                val request = ImageRequest.Builder(mContext)
-                    .data(header.shopLogo)
-                    .allowHardware(false)
-                    .build()
-                imageLoader.execute(request).drawable?.toBitmap()
+        // Shop Logo
+        if (header.shopLogo.isNullOrEmpty()) {
+            binding.ivLogo.visibility = View.GONE
+        } else {
+            binding.ivLogo.visibility = View.VISIBLE
+            binding.ivLogo.load(header.shopLogo)
+            lifecycleScope.launch {
+                shopLogoBitmap = withContext(Dispatchers.IO) {
+                    val request = ImageRequest.Builder(mContext)
+                        .data(header.shopLogo)
+                        .allowHardware(false)
+                        .build()
+                    imageLoader.execute(request).drawable?.toBitmap()
+                }
             }
         }
 
-        binding.tvShopName.text = header.shopName
-        binding.tvAddress.text = header.shopAddress
-        binding.tvPhone.text = header.shopPhone
-        binding.tvInvoiceNo.text = header.voucherNo
-        binding.tvCashier.text = header.cashierName
-        binding.tvDateTime.text = myDateTimeFormatter(header.voucherDate)
+        binding.tvShopName.showIfNotEmpty(header.shopName)
+        binding.tvAddress.showIfNotEmpty(header.shopAddress)
+        binding.tvPhone.showIfNotEmpty(header.shopPhone)
+        binding.tvInvoiceNo.text = header.voucherNo ?: ""
+        binding.tvCashier.text = header.cashierName ?: ""
+        binding.tvDateTime.showIfNotEmpty(myDateTimeFormatter(header.voucherDate))
+
+        // Hide layout containers
+        binding.layoutInvoiceNo.showIfValueNotNull(header.voucherNo)
+        binding.layoutCashier.showIfValueNotNull(header.cashierName)
+
+        // Show/hide separators based on content
+        val hasHeaderContent = binding.ivLogo.isVisible ||
+                (binding.tvShopName.isVisible && binding.tvShopName.text.isNotEmpty()) ||
+                (binding.tvAddress.isVisible && binding.tvAddress.text.isNotEmpty()) ||
+                (binding.tvPhone.isVisible && binding.tvPhone.text.isNotEmpty())
+
+        binding.separatorHeader.visibility = if (hasHeaderContent) View.VISIBLE else View.GONE
+
+        val hasInfoContent = (binding.layoutInvoiceNo.isVisible && binding.tvInvoiceNo.text.isNotEmpty()) ||
+                (binding.layoutCashier.isVisible && binding.tvCashier.text.isNotEmpty()) ||
+                (binding.tvDateTime.isVisible && binding.tvDateTime.text.isNotEmpty())
+
+        binding.separatorInfo.visibility = if (hasInfoContent) View.VISIBLE else View.GONE
 
         val items = body.map {
+            val qtyText = it.itemQuantity
+                ?.toDoubleOrNull()
+                ?.toInt()
+                ?.let { qty -> "$qty x " }
+                ?: ""
+
             PreviewItem(
-                "${it.itemQuantity.toDouble().toInt()} x ${it.itemName}",
-                "${formatAmount(it.itemLineAmount)} $currencySymbol"
+                "$qtyText${it.itemName.orEmpty()}",
+                "${formatAmount(it.itemLineAmount)}"
             )
         }
         binding.rvItems.layoutManager = LinearLayoutManager(this)
         binding.rvItems.adapter = PreviewAdapter(items)
 
-        binding.tvSubTotal.text = "${formatAmount(footer.subtotal)} $currencySymbol"
-        binding.tvDiscount.text = "${formatAmount(footer.discountTotal)} $currencySymbol"
-        binding.tvTotalAmount.text = "${formatAmount(footer.grandTotal)} $currencySymbol"
-        binding.tvTax.text = "${formatAmount(footer.taxTotal)} $currencySymbol"
-        binding.tvUnpaidAmount.text = "${formatAmount(footer.unpaidAmount)} $currencySymbol"
-        binding.tvPaidAmount.text = "${formatAmount(footer.paidAmount)} $currencySymbol"
-        binding.tvRefundAmount.text = "${formatAmount(footer.refundAmount)} $currencySymbol"
-        receiptNote = footer.receiptNote
+        binding.tvSubTotal.text = "${formatAmount(footer.subtotal)}"
+        binding.tvDiscount.text = "${formatAmount(footer.discountTotal)}"
+        binding.tvTotalAmount.text = "${formatAmount(footer.grandTotal)}"
+        binding.tvTax.text = "${formatAmount(footer.taxTotal)}"
+        binding.tvUnpaidAmount.text = "${formatAmount(footer.unpaidAmount)}"
+        binding.tvPaidAmount.text = "${formatAmount(footer.paidAmount)}"
+        binding.tvRefundAmount.text = "${formatAmount(footer.refundAmount)}"
+
+        binding.layoutSubtotal.showIfValueNotNull(footer.subtotal)
+        binding.layoutDiscount.showIfValueNotNull(footer.discountTotal)
+        binding.layoutTax.showIfValueNotNull(footer.taxTotal)
+        binding.layoutTotal.showIfValueNotNull(footer.grandTotal)
+        binding.layoutUnpaid.showIfValueNotNull(footer.unpaidAmount)
+        binding.layoutPaid.showIfValueNotNull(footer.paidAmount)
+        binding.layoutRefund.showIfValueNotNull(footer.refundAmount)
+
+        // Show separators for totals section
+        val hasTotals = binding.layoutSubtotal.isVisible ||
+                binding.layoutDiscount.isVisible ||
+                binding.layoutTax.isVisible
+
+        binding.separatorBeforeTotals.visibility = if (hasTotals && items.isNotEmpty()) View.VISIBLE else View.GONE
+        binding.separatorBeforeTotal.visibility = if (binding.layoutTotal.isVisible) View.VISIBLE else View.GONE
+
+        receiptNote = footer.receiptNote?.takeIf { it.isNotBlank() } ?: "Thanks For Shopping!!!"
+        binding.separatorBeforeNote.visibility = if (receiptNote.isNotEmpty()) View.VISIBLE else View.GONE
+        binding.tvNote.text = receiptNote
     }
 
     private fun setupPreviewData() {
@@ -424,46 +479,85 @@ class PreviewActivity : AppCompatActivity() {
 
         val receiptText = buildString {
 
-            // Logo - only if available
-            shopLogoBitmap?.let { logo ->
-                val logoBitmap = Bitmap.createScaledBitmap(logo, 150, 150, true)
-                val imageHex = PrinterTextParserImg.bitmapToHexadecimalString(printer, logoBitmap)
-                appendLine("[C]<img>$imageHex</img>")
+            // Logo - only if visible
+            if (binding.ivLogo.isVisible) {
+                shopLogoBitmap?.let { logo ->
+                    val logoBitmap = Bitmap.createScaledBitmap(logo, 150, 150, true)
+                    val imageHex = PrinterTextParserImg.bitmapToHexadecimalString(printer, logoBitmap)
+                    appendLine("[C]<img>$imageHex</img>")
+                }
             }
 
-            // Shop name - Myanmar font bitmap
-            textToImageHex(printer, binding.tvShopName.text.toString(), 24f, isBold = true)?.let {
-                appendLine("[C]<img>$it</img>")
+            // Shop name
+            if (binding.tvShopName.isVisible && binding.tvShopName.text.isNotEmpty()) {
+                textToImageHex(printer, binding.tvShopName.text.toString(), 24f, isBold = true)?.let {
+                    appendLine("[C]<img>$it</img>")
+                }
             }
 
-            // Shop address - Myanmar font bitmap
-            textToImageHex(printer, binding.tvAddress.text.toString(), 24f)?.let {
-                appendLine("[C]<img>$it</img>")
+            // Shop address
+            if (binding.tvAddress.isVisible && binding.tvAddress.text.isNotEmpty()) {
+                textToImageHex(printer, binding.tvAddress.text.toString(), 24f)?.let {
+                    appendLine("[C]<img>$it</img>")
+                }
             }
 
-            // Shop phone - plain text
-            appendLine("[C]${binding.tvPhone.text}")
-            appendLine("[C]${"-".repeat(maxChars)}")
+            // Shop phone
+            if (binding.tvPhone.isVisible && binding.tvPhone.text.isNotEmpty()) {
+                appendLine("[C]${binding.tvPhone.text}")
+            }
+
+            // Only add separator if there's any header content
+            if (binding.ivLogo.isVisible ||
+                (binding.tvShopName.isVisible && binding.tvShopName.text.isNotEmpty()) ||
+                (binding.tvAddress.isVisible && binding.tvAddress.text.isNotEmpty()) ||
+                (binding.tvPhone.isVisible && binding.tvPhone.text.isNotEmpty())) {
+                appendLine("[C]${"-".repeat(maxChars)}")
+            }
 
             // Voucher No
-            appendLine("[L]Voucher No: ${binding.tvInvoiceNo.text}")
-
-            // Cashier (left) and DateTime (right) on same row
-            createLeftRightTextBitmap(
-                "Cashier: ${binding.tvCashier.text}",
-                binding.tvDateTime.text.toString(),
-                printerWidthPx, 24f,0f
-            )?.let {
-                val hex = PrinterTextParserImg.bitmapToHexadecimalString(printer, it)
-                appendLine("[L]<img>$hex</img>")
+            if (binding.layoutInvoiceNo.isVisible && binding.tvInvoiceNo.text.isNotEmpty()) {
+                appendLine("[L]Voucher No: ${binding.tvInvoiceNo.text}")
             }
-            appendLine("[C]${"-".repeat(maxChars)}")
 
-            // Item header
-            appendLine("[L]<b>ITEM[R]AMOUNT</b>")
-            appendLine("[C]${"-".repeat(maxChars)}")
+            // Cashier and DateTime on same row
+            val showCashier = binding.layoutCashier.isVisible && binding.tvCashier.text.isNotEmpty()
+            val showDateTime = binding.tvDateTime.isVisible && binding.tvDateTime.text.isNotEmpty()
 
-            // Items - Myanmar font for name, Default for amount
+            if (showCashier || showDateTime) {
+                when {
+                    showCashier && showDateTime -> {
+                        createLeftRightTextBitmap(
+                            "Cashier: ${binding.tvCashier.text}",
+                            binding.tvDateTime.text.toString(),
+                            printerWidthPx, 24f, 0f
+                        )?.let {
+                            val hex = PrinterTextParserImg.bitmapToHexadecimalString(printer, it)
+                            appendLine("[L]<img>$hex</img>")
+                        }
+                    }
+                    showCashier -> {
+                        appendLine("[L]Cashier: ${binding.tvCashier.text}")
+                    }
+                    showDateTime -> {
+                        appendLine("[R]${binding.tvDateTime.text}")
+                    }
+                }
+            }
+
+            // Add separator if any voucher/cashier/date content exists
+            if ((binding.layoutInvoiceNo.isVisible && binding.tvInvoiceNo.text.isNotEmpty()) ||
+                showCashier || showDateTime) {
+                appendLine("[C]${"-".repeat(maxChars)}")
+            }
+
+            // Items header (optional)
+            //if (items.isNotEmpty()) {
+                // You can add item header here if needed
+                // appendLine("[L]<b>ITEM[R]AMOUNT</b>")
+            //}
+
+            // Items list
             items.forEach { item ->
                 createItemRowBitmap(item.key, item.value, printerWidthPx, 24f)?.let { bitmap ->
                     val hex = PrinterTextParserImg.bitmapToHexadecimalString(printer, bitmap)
@@ -471,23 +565,61 @@ class PreviewActivity : AppCompatActivity() {
                 }
             }
 
-            appendLine("[C]${"-".repeat(maxChars)}")
+            if (items.isNotEmpty()) {
+                appendLine("[C]${"-".repeat(maxChars)}")
+            }
 
-            // Totals - plain text
-            appendLine("[L]Subtotal[R]${binding.tvSubTotal.text}")
-            appendLine("[L]Discount[R]${binding.tvDiscount.text}")
-            appendLine("[L]Tax[R]${binding.tvTax.text}")
-            appendLine("[C]${"-".repeat(maxChars)}")
-            appendLine("[L]<b>Total[R]${binding.tvTotalAmount.text}</b>")
-            appendLine("[C]${"-".repeat(maxChars)}")
-            appendLine("[L]Unpaid Amount[R]${binding.tvUnpaidAmount.text}")
-            appendLine("[L]Paid Amount[R]${binding.tvPaidAmount.text}")
-            appendLine("[L]Refund Amount[R]${binding.tvRefundAmount.text}")
-            appendLine("[C]${"-".repeat(maxChars)}")
+            // Subtotal
+            if (binding.layoutSubtotal.isVisible && binding.tvSubTotal.text.isNotEmpty()) {
+                appendLine("[L]Subtotal[R]${binding.tvSubTotal.text}")
+            }
+
+            // Discount
+            if (binding.layoutDiscount.isVisible && binding.tvDiscount.text.isNotEmpty()) {
+                appendLine("[L]Discount[R]${binding.tvDiscount.text}")
+            }
+
+            // Tax
+            if (binding.layoutTax.isVisible && binding.tvTax.text.isNotEmpty()) {
+                appendLine("[L]Tax[R]${binding.tvTax.text}")
+            }
+
+            // Add separator if any of subtotal/discount/tax is visible
+            if (binding.layoutSubtotal.isVisible || binding.layoutDiscount.isVisible || binding.layoutTax.isVisible) {
+                appendLine("[C]${"-".repeat(maxChars)}")
+            }
+
+            // Total
+            if (binding.layoutTotal.isVisible && binding.tvTotalAmount.text.isNotEmpty()) {
+                appendLine("[L]<b>Total[R]${binding.tvTotalAmount.text}</b>")
+            }
+
+            // Unpaid Amount
+            if (binding.layoutUnpaid.isVisible && binding.tvUnpaidAmount.text.isNotEmpty()) {
+                appendLine("[L]Unpaid Amount[R]${binding.tvUnpaidAmount.text}")
+            }
+
+            // Paid Amount
+            if (binding.layoutPaid.isVisible && binding.tvPaidAmount.text.isNotEmpty()) {
+                appendLine("[L]Paid Amount[R]${binding.tvPaidAmount.text}")
+            }
+
+            // Refund Amount
+            if (binding.layoutRefund.isVisible && binding.tvRefundAmount.text.isNotEmpty()) {
+                appendLine("[L]Refund Amount[R]${binding.tvRefundAmount.text}")
+            }
+
+            // Add separator if any payment fields are visible
+            if (binding.layoutUnpaid.isVisible || binding.layoutPaid.isVisible || binding.layoutRefund.isVisible) {
+                appendLine("[C]${"-".repeat(maxChars)}")
+            }
 
             // Footer note
-            appendLine("[C]$receiptNote")
-            appendLine()
+            if (receiptNote.isNotEmpty()) {
+                appendLine("[C]$receiptNote")
+            }
+            appendLine(" ")
+            appendLine(" ")
         }
 
         val receiptText2 = buildString {
@@ -510,6 +642,7 @@ class PreviewActivity : AppCompatActivity() {
         }
 
         printer.printFormattedText(receiptText)
+
     }
 
     private fun createLeftRightTextBitmap(leftText: String, rightText: String, maxWidth: Int, textSize: Float = 18f, leftPadding: Float = 10f): Bitmap? {

@@ -10,8 +10,8 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorSurface"
-        app:titleTextColor="?attr/colorOnSurface"
+        android:background="?attr/colorPrimary"
+        app:titleTextColor="?attr/colorOnPrimary"
         app:menu="@menu/menu_printer"
         app:title="">
         <ImageView
@@ -50,6 +50,7 @@
 
             <!-- Scrollable Receipt -->
             <ScrollView
+                android:id="@+id/layoutMain"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
                 android:layout_weight="1">
@@ -58,8 +59,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="12dp"
-                    android:background="@android:color/white">
+                    android:padding="12dp">
 
                     <ImageView
                         android:id="@+id/ivLogo"
@@ -72,6 +72,7 @@
                         android:maxHeight="100dp"
                         android:layout_marginBottom="8dp"
                         android:layout_gravity="center" />
+
                     <!-- shop name -->
                     <TextView
                         android:id="@+id/tvShopName"
@@ -82,8 +83,6 @@
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:textAlignment="center" />
-
-
 
                     <!-- Address -->
                     <TextView
@@ -102,6 +101,7 @@
                         android:layout_marginTop="8dp"
                         android:textSize="18sp"
                         android:textStyle="bold"
+                        android:visibility="gone"
                         android:textAlignment="center" />
 
                     <!-- Phone -->
@@ -112,16 +112,24 @@
                         android:text="Phone: 09-123456789"
                         android:textSize="14sp"
                         android:textAlignment="center"
-                        android:visibility="gone"
                         android:layout_marginBottom="8dp" />
+
+                    <!-- Separator after header -->
+                    <View
+                        android:id="@+id/separatorHeader"
+                        android:layout_width="match_parent"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="@drawable/dotted_line"
+                        android:visibility="visible" />
 
                     <androidx.constraintlayout.widget.ConstraintLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp">
+                        android:layout_height="wrap_content">
 
                         <LinearLayout
-                            android:id="@+id/layoutInvoice"
+                            android:id="@+id/layoutInvoiceNo"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
@@ -132,28 +140,22 @@
                                 android:layout_height="wrap_content"
                                 android:text="Invoice No:"
                                 android:textSize="14sp"
-                                android:layout_marginRight="4dp"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toTopOf="parent" />
+                                android:layout_marginRight="4dp" />
                             <TextView
                                 android:id="@+id/tvInvoiceNo"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="1212"
-                                android:textSize="14sp"
-                                app:layout_constraintStart_toStartOf="parent"
-                                app:layout_constraintTop_toTopOf="parent" />
+                                android:textSize="14sp" />
                         </LinearLayout>
 
                         <LinearLayout
                             android:id="@+id/layoutCashier"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Cashier:"
-                            android:textSize="14sp"
                             android:layout_marginRight="4dp"
                             app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toBottomOf="@+id/layoutInvoice">
+                            app:layout_constraintTop_toBottomOf="@+id/layoutInvoiceNo">
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -178,9 +180,18 @@
                             android:text="29/01/2026"
                             android:textSize="14sp"
                             app:layout_constraintRight_toRightOf="parent"
-                            app:layout_constraintTop_toBottomOf="@+id/layoutInvoice"
-                            />
+                            app:layout_constraintTop_toBottomOf="@+id/layoutInvoiceNo" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
+
+                    <!-- Separator after invoice/cashier -->
+                    <View
+                        android:id="@+id/separatorInfo"
+                        android:layout_width="match_parent"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="@drawable/dotted_line"
+                        android:visibility="visible" />
 
                     <!-- Dynamic key-value list -->
                     <androidx.recyclerview.widget.RecyclerView
@@ -188,15 +199,24 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:nestedScrollingEnabled="false"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="8dp" />
+                        android:layout_marginBottom="0dp" />
 
-                    <!-- Total -->
+                    <!-- Separator before totals -->
+                    <View
+                        android:id="@+id/separatorBeforeTotals"
+                        android:layout_width="match_parent"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="@drawable/dotted_line"
+                        android:visibility="visible" />
+
+                    <!-- Subtotal -->
                     <LinearLayout
+                        android:id="@+id/layoutSubtotal"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="8dp">
+                        android:orientation="horizontal">
 
                         <TextView
                             android:layout_width="0dp"
@@ -211,8 +231,9 @@
                             android:text="8,500"/>
                     </LinearLayout>
 
-                    <!-- Total -->
+                    <!-- Discount -->
                     <LinearLayout
+                        android:id="@+id/layoutDiscount"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
@@ -231,7 +252,9 @@
                             android:text="8,500" />
                     </LinearLayout>
 
+                    <!-- Tax -->
                     <LinearLayout
+                        android:id="@+id/layoutTax"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
@@ -250,27 +273,42 @@
                             android:text="500" />
                     </LinearLayout>
 
+                    <!-- Separator before total -->
+                    <View
+                        android:id="@+id/separatorBeforeTotal"
+                        android:layout_width="match_parent"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="@drawable/dotted_line"
+                        android:visibility="visible" />
+
                     <!-- Total -->
                     <LinearLayout
+                        android:id="@+id/layoutTotal"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="8dp">
+                        android:orientation="horizontal">
 
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Total"/>
+                            android:text="Total"
+                            android:textStyle="bold"/>
 
                         <TextView
                             android:id="@+id/tvTotalAmount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="8,500" />
+                            android:text="8,500"
+                            android:textStyle="bold"/>
                     </LinearLayout>
-                    <!-- Total -->
+
+
+                    <!-- Unpaid Amount -->
                     <LinearLayout
+                        android:id="@+id/layoutUnpaid"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
@@ -288,8 +326,10 @@
                             android:layout_height="wrap_content"
                             android:text="8,500" />
                     </LinearLayout>
-                    <!-- Total -->
+
+                    <!-- Paid Amount -->
                     <LinearLayout
+                        android:id="@+id/layoutPaid"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
@@ -308,7 +348,9 @@
                             android:text="8,500" />
                     </LinearLayout>
 
+                    <!-- Refund Amount -->
                     <LinearLayout
+                        android:id="@+id/layoutRefund"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
@@ -318,13 +360,40 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Paid Amount"/>
+                            android:text="Refund Amount"/>
 
                         <TextView
                             android:id="@+id/tvRefundAmount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="500" />
+                    </LinearLayout>
+
+                    <!-- Separator before note -->
+                    <View
+                        android:id="@+id/separatorBeforeNote"
+                        android:layout_width="match_parent"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="8dp"
+                        android:background="@drawable/dotted_line"
+                        android:visibility="visible" />
+
+                    <!-- Note -->
+                    <LinearLayout
+                        android:id="@+id/layoutNote"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="12dp">
+
+                        <TextView
+                            android:id="@+id/tvNote"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center_horizontal"
+                            android:text="Thanks for shopping!!!"/>
                     </LinearLayout>
                 </LinearLayout>
             </ScrollView>
@@ -334,6 +403,7 @@
                 android:id="@+id/btnPrint"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:backgroundTint="@color/button_color"
                 android:text="PRINT"
                 android:layout_marginTop="8dp" />
 
@@ -351,7 +421,7 @@
 
     <LinearLayout
         android:id="@+id/errorLayout"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_anchor="@+id/mainLayoutWrapper"
@@ -362,14 +432,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="error"
+            android:layout_gravity="center_horizontal"
             android:layout_marginBottom="16dp"/>
         <Button
             android:id="@+id/btnTryAgain"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="12sp"
+            android:layout_gravity="center_horizontal"
             android:text="Try Again"/>
     </LinearLayout>
-
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

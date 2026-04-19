@@ -2,8 +2,6 @@ package com.sa.posprinter.util
 
 import android.view.View
 import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
-import com.google.android.material.card.MaterialCardView
 
 // For TextView
 fun TextView.showIfNotEmpty(text: String?) {

@@ -1,3 +1,55 @@
 <resources>
     <string name="app_name">ZIIGWAT POS</string>
+
+    <!-- Toolbar -->
+    <string name="title_print_preview">Print Preview</string>
+    <string name="desc_back">back</string>
+    <string name="desc_shop_logo">Shop logo</string>
+
+    <!-- Defaults / placeholders (these are overwritten at runtime from API) -->
+    <string name="default_shop_name">Dora Storee</string>
+    <string name="default_shop_address">No.12, Main Road, Yangon</string>
+    <string name="label_receipt_banner">*** Receipt ****</string>
+    <string name="default_phone">Phone: 09-123456789</string>
+
+    <!-- Invoice / cashier / date placeholders -->
+    <string name="label_invoice_no">Invoice No:</string>
+    <string name="default_invoice_no">1212</string>
+    <string name="label_cashier">Cashier:</string>
+    <string name="default_cashier">Dora Storee</string>
+    <string name="default_date">29/01/2026</string>
+
+    <!-- Totals labels and defaults -->
+    <string name="label_subtotal">Subtotal</string>
+    <string name="default_subtotal">8,500</string>
+    <string name="label_discount">Discount</string>
+    <string name="default_discount">8,500</string>
+    <string name="label_tax">Tax</string>
+    <string name="default_tax">500</string>
+    <string name="label_total">Total</string>
+    <string name="default_total">8,500</string>
+    <string name="label_unpaid_amount">Unpaid Amount</string>
+    <string name="default_unpaid">8,500</string>
+    <string name="label_paid_amount">Paid Amount</string>
+    <string name="default_paid">8,500</string>
+    <string name="label_refund_amount">Refund Amount</string>
+    <string name="default_refund">500</string>
+
+    <!-- Note / actions / errors -->
+    <string name="thanks_for_shopping">Thanks for shopping!!!</string>
+    <string name="action_print">PRINT</string>
+    <string name="error_default_message">error</string>
+    <string name="action_try_again">Try Again</string>
+
+    <string name="back">back</string>
+    <string name="paper_size">Paper Size:</string>
+    <string name="paper_size_58">58mm</string>
+    <string name="paper_size_80">80mm</string>
+    <string name="detail">Detail</string>
+    <string name="fail_message">Failed to load receipt data!</string>
+    <string name="printing_progress">Printing in progress…</string>
+
+    <string name="bluetooth_not_support_error">Device doesn\'t support Bluetooth</string>
+    <string name="printing">Printing…</string>
+    <string name="print">Print</string>
 </resources>

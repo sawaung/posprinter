@@ -25,7 +25,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Paper Size:"
+        android:text="@string/paper_size"
         android:textSize="16sp"
         android:layout_marginBottom="12dp" />
 
@@ -40,13 +40,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="24dp"
-            android:text="58mm" />
+            android:text="@string/paper_size_58" />
 
         <com.google.android.material.radiobutton.MaterialRadioButton
             android:id="@+id/rb80mm"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="80mm" />
+            android:text="@string/paper_size_80" />
 
     </RadioGroup>
 

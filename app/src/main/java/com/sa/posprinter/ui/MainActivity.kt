@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
         window.statusBarColor = ContextCompat.getColor(this, R.color.md_primary)
 
         WindowCompat.getInsetsController(window, window.decorView)
-            .isAppearanceLightStatusBars = false  // dark icons
+            .isAppearanceLightStatusBars = false
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -38,8 +38,6 @@ class MainActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
-
         setupWebView()
     }
 
@@ -75,7 +73,6 @@ class MainActivity : AppCompatActivity() {
             databaseEnabled = true
             javaScriptCanOpenWindowsAutomatically = true
 
-            // ✅ Recommended extras
             setSupportMultipleWindows(false)
             loadsImagesAutomatically = true
             mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
@@ -84,11 +81,6 @@ class MainActivity : AppCompatActivity() {
         webView.addJavascriptInterface(WebAppInterface(this), "Android")
 
         webView.loadUrl("https://pos.ziigwat.com")
-//        webView.loadData(
-//            loadHTMLContent(),
-//            "text/html",
-//            "UTF-8"
-//        )
     }
 
     fun loadHTMLContent() = """

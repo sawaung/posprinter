@@ -19,12 +19,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/ic_back"
-            android:layout_marginRight="8dp"
-            android:contentDescription="back" />
+            android:layout_marginEnd="8dp"
+            android:contentDescription="@string/desc_back" />
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Print Preview"
+            android:text="@string/title_print_preview"
             android:textSize="18sp"
             android:textColor="@color/white"/>
     </com.google.android.material.appbar.MaterialToolbar>
@@ -68,6 +68,7 @@
                         android:adjustViewBounds="true"
                         android:scaleType="fitCenter"
                         android:src="@drawable/ic_setting"
+                        android:contentDescription="@string/desc_shop_logo"
                         android:maxWidth="100dp"
                         android:maxHeight="100dp"
                         android:layout_marginBottom="8dp"
@@ -79,7 +80,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:text="Dora Storee"
+                        android:text="@string/default_shop_name"
                         android:textSize="14sp"
                         android:textStyle="bold"
                         android:textAlignment="center" />
@@ -89,7 +90,7 @@
                         android:id="@+id/tvAddress"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="No.12, Main Road, Yangon"
+                        android:text="@string/default_shop_address"
                         android:textSize="14sp"
                         android:textAlignment="center" />
 
@@ -97,7 +98,7 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="*** Receipt ****"
+                        android:text="@string/label_receipt_banner"
                         android:layout_marginTop="8dp"
                         android:textSize="18sp"
                         android:textStyle="bold"
@@ -109,7 +110,7 @@
                         android:id="@+id/tvPhone"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Phone: 09-123456789"
+                        android:text="@string/default_phone"
                         android:textSize="14sp"
                         android:textAlignment="center"
                         android:layout_marginBottom="8dp" />
@@ -138,14 +139,14 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Invoice No:"
+                                android:text="@string/label_invoice_no"
                                 android:textSize="14sp"
-                                android:layout_marginRight="4dp" />
+                                android:layout_marginEnd="4dp" />
                             <TextView
                                 android:id="@+id/tvInvoiceNo"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="1212"
+                                android:text="@string/default_invoice_no"
                                 android:textSize="14sp" />
                         </LinearLayout>
 
@@ -153,23 +154,23 @@
                             android:id="@+id/layoutCashier"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginRight="4dp"
+                            android:layout_marginEnd="4dp"
                             app:layout_constraintStart_toStartOf="parent"
                             app:layout_constraintTop_toBottomOf="@+id/layoutInvoiceNo">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Cashier:"
+                                android:text="@string/label_cashier"
                                 android:textSize="14sp"
-                                android:layout_marginRight="4dp"/>
+                                android:layout_marginEnd="4dp"/>
                             <TextView
                                 android:id="@+id/tvCashier"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Dora Storee"
+                                android:text="@string/default_cashier"
                                 android:textSize="14sp"
-                                android:layout_marginRight="4dp"/>
+                                android:layout_marginEnd="4dp"/>
                         </LinearLayout>
 
                         <!-- Date Time -->
@@ -177,7 +178,7 @@
                             android:id="@+id/tvDateTime"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="29/01/2026"
+                            android:text="@string/default_date"
                             android:textSize="14sp"
                             app:layout_constraintRight_toRightOf="parent"
                             app:layout_constraintTop_toBottomOf="@+id/layoutInvoiceNo" />
@@ -222,13 +223,13 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Subtotal" />
+                            android:text="@string/label_subtotal" />
 
                         <TextView
                             android:id="@+id/tvSubTotal"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="8,500"/>
+                            android:text="@string/default_subtotal"/>
                     </LinearLayout>
 
                     <!-- Discount -->
@@ -243,13 +244,13 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Discount"/>
+                            android:text="@string/label_discount"/>
 
                         <TextView
                             android:id="@+id/tvDiscount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="8,500" />
+                            android:text="@string/default_discount" />
                     </LinearLayout>
 
                     <!-- Tax -->
@@ -264,13 +265,13 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Tax"/>
+                            android:text="@string/label_tax"/>
 
                         <TextView
                             android:id="@+id/tvTax"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="500" />
+                            android:text="@string/default_tax" />
                     </LinearLayout>
 
                     <!-- Separator before total -->
@@ -294,14 +295,14 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Total"
+                            android:text="@string/label_total"
                             android:textStyle="bold"/>
 
                         <TextView
                             android:id="@+id/tvTotalAmount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="8,500"
+                            android:text="@string/default_total"
                             android:textStyle="bold"/>
                     </LinearLayout>
 
@@ -318,13 +319,13 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Unpaid Amount"/>
+                            android:text="@string/label_unpaid_amount"/>
 
                         <TextView
                             android:id="@+id/tvUnpaidAmount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="8,500" />
+                            android:text="@string/default_unpaid" />
                     </LinearLayout>
 
                     <!-- Paid Amount -->
@@ -339,13 +340,13 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Paid Amount"/>
+                            android:text="@string/label_paid_amount"/>
 
                         <TextView
                             android:id="@+id/tvPaidAmount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="8,500" />
+                            android:text="@string/default_paid" />
                     </LinearLayout>
 
                     <!-- Refund Amount -->
@@ -360,13 +361,13 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Refund Amount"/>
+                            android:text="@string/label_refund_amount"/>
 
                         <TextView
                             android:id="@+id/tvRefundAmount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="500" />
+                            android:text="@string/default_refund" />
                     </LinearLayout>
 
                     <!-- Separator before note -->
@@ -393,7 +394,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:gravity="center_horizontal"
-                            android:text="Thanks for shopping!!!"/>
+                            android:text="@string/thanks_for_shopping"/>
                     </LinearLayout>
                 </LinearLayout>
             </ScrollView>
@@ -404,7 +405,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:backgroundTint="@color/button_color"
-                android:text="PRINT"
+                android:text="@string/action_print"
                 android:layout_marginTop="8dp" />
 
         </LinearLayout>
@@ -431,7 +432,7 @@
             android:id="@+id/tvError"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="error"
+            android:text="@string/error_default_message"
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="16dp"/>
         <Button
@@ -440,7 +441,7 @@
             android:layout_height="wrap_content"
             android:textSize="12sp"
             android:layout_gravity="center_horizontal"
-            android:text="Try Again"/>
+            android:text="@string/action_try_again"/>
     </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -28,6 +28,7 @@ class utils {
             } catch (e: Exception) {
                 null
             }
+
         }
 
 
@@ -36,6 +37,15 @@ class utils {
 
             val formatter = DecimalFormat("#,###.##")
             return formatter.format(number)
+        }
+
+        fun getPrinterWidthInPixels(paperSize: String): Int {
+            return when (paperSize.lowercase(Locale.getDefault())) {
+                "58mm", "58" -> 384  // 58mm at 203 DPI
+                "76mm", "76" -> 512  // 76mm at 203 DPI
+                "80mm", "80" -> 576  // 80mm at 203 DPI
+                else -> 576
+            }
         }
 
     }

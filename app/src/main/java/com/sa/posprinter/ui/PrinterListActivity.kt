@@ -56,12 +56,11 @@ class PrinterListActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.decorView.systemUiVisibility = 0 // Disable edge-to-edge
         setContentView(R.layout.activity_printer_list)
-
         setupToolbar()
 
         listView = findViewById(R.id.listView)
-        val btnScan = findViewById<Button>(R.id.btnScan)
 
         // Initialize SharedPreferences
         printerPref = PrinterPreference(this)
@@ -104,7 +103,6 @@ class PrinterListActivity : AppCompatActivity() {
 
     private fun setupToolbar() {
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
-        //setSupportActionBar(toolbar)
         val btnBack = findViewById<ImageView>(R.id.btnBack)
 
         btnBack.setOnClickListener {

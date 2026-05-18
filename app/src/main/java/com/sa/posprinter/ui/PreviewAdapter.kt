@@ -11,8 +11,6 @@ import com.sa.posprinter.model.PreviewItem
 class PreviewAdapter(
     private val items: List<PreviewItem>
 ) : RecyclerView.Adapter<PreviewAdapter.ViewHolder>() {
-//class PreviewAdapter(private val items: List<PreviewItem>) :
-//    RecyclerView.Adapter<PreviewAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvKey: TextView = view.findViewById(R.id.tvKey)
@@ -36,7 +34,5 @@ class PreviewAdapter(
     fun getItems(): List<PreviewItem> {
         return items
     }
-//    fun getItems(): List<Pair<String, String>> {
-//        return items.map { it.key to it.value }
-//    }
+
 }

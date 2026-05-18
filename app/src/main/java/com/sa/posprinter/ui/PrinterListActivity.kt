@@ -25,6 +25,10 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
@@ -56,8 +60,25 @@ class PrinterListActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.decorView.systemUiVisibility = 0 // Disable edge-to-edge
+
         setContentView(R.layout.activity_printer_list)
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+            v.setPadding(
+                systemBars.left,
+                systemBars.top,
+                systemBars.right,
+                systemBars.bottom
+            )
+
+            insets
+        }
+
+        window.statusBarColor = ContextCompat.getColor(this, R.color.md_primary)
+        WindowCompat.getInsetsController(window, window.decorView)
+            .isAppearanceLightStatusBars = false
+
         setupToolbar()
 
         listView = findViewById(R.id.listView)
@@ -90,16 +111,6 @@ class PrinterListActivity : AppCompatActivity() {
         } else {
             requestBluetoothPermissionWithRationale()
         }
-
-        // Button click → check permission & load devices
-//        btnScan.setOnClickListener {
-//            if (hasBluetoothPermission()) {
-//                loadPairedDevices()
-//            } else {
-//                requestBluetoothPermissionWithRationale()
-//            }
-//        }
-    }
 
     private fun setupToolbar() {
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
@@ -503,19 +514,6 @@ class PrinterListActivity : AppCompatActivity() {
         fun onConnectionSuccess(socket: BluetoothSocket)
         fun onConnectionFailed(error: String)
     }
-
-    /** Retrieve saved printer */
-//    fun getSavedPrinter(): Triple<String, String, String>? {
-//        val name = sharedPrefs.getString(KEY_PRINTER_NAME, null)
-//        val address = sharedPrefs.getString(KEY_PRINTER_ADDRESS, null)
-//        val paperSize = sharedPrefs.getString(KEY_PAPER_SIZE, "58mm") ?: "58mm"
-//
-//        return if (name != null && address != null) {
-//            Triple(name, address, paperSize)
-//        } else {
-//            null
-//        }
-//    }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.refresh_printer_menu, menu)
